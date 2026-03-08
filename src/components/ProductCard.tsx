@@ -3,7 +3,7 @@ import { Box, Typography, Chip, Rating, IconButton, Tooltip } from '@mui/materia
 import { motion } from 'framer-motion';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
-import type { Product } from '@/data/products';
+import type { Product } from '@/hooks/useProducts';
 import ProductStockIndicator from './ProductStockIndicator';
 
 interface ProductCardProps {
