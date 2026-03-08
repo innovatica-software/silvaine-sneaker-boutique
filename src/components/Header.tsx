@@ -349,8 +349,6 @@ const Header = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Spacer to offset fixed navbar + announcement bar */}
-      <Box sx={{ height: { xs: 88, md: scrolled ? 70 : 112 }, transition: 'height 0.4s ease' }} />
 
       {/* Mobile Drawer */}
       <AnimatePresence>
