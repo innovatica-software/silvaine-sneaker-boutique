@@ -7,18 +7,36 @@ import {
   TextField,
   Button,
   Divider,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { signUp } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    const { error } = await signUp(email, password, name);
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -26,13 +44,15 @@ const Register = () => {
       <Container maxWidth="xs">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Typography variant="h3" sx={{ mb: 1 }}>
-              Join Silvaine
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Create your account to start shopping
-            </Typography>
+            <Typography variant="h3" sx={{ mb: 1 }}>Join Silvaine</Typography>
+            <Typography variant="body2" color="text.secondary">Create your account to start shopping</Typography>
           </Box>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, backgroundColor: 'rgba(207,102,121,0.1)', color: '#CF6679' }}>
+              {error}
+            </Alert>
+          )}
 
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
@@ -62,8 +82,8 @@ const Register = () => {
               required
               helperText="Minimum 8 characters"
             />
-            <Button type="submit" variant="contained" fullWidth sx={{ py: 1.5, mb: 3 }}>
-              Create Account
+            <Button type="submit" variant="contained" fullWidth sx={{ py: 1.5, mb: 3 }} disabled={loading}>
+              {loading ? <CircularProgress size={20} /> : 'Create Account'}
             </Button>
           </Box>
 
