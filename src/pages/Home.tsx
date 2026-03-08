@@ -38,6 +38,7 @@ const customerReviews = [
 ];
 
 const Home = () => {
+  const { data: products = [], isLoading } = useProducts();
   const featured = products.filter((p) => p.isBestSeller);
   const newArrivals = products.filter((p) => p.isNew);
   const trending = products.filter((p) => p.isTrending);
