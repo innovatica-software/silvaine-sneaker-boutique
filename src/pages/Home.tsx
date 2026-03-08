@@ -389,7 +389,7 @@ const Home = () => {
             <Grid size={{ xs: 12, md: 6 }}>
               <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }}>
                 <Box sx={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
-                  <Box component="img" src={products[0].images[0]} alt="Silvaine Craftsmanship" sx={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.8) contrast(1.1)' }} />
+                  <Box component="img" src={products[0]?.images[0] || '/placeholder.svg'} alt="Silvaine Craftsmanship" sx={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.8) contrast(1.1)' }} />
                   <Box sx={{ position: 'absolute', inset: 0, border: '1px solid rgba(201, 169, 110, 0.15)' }} />
                 </Box>
               </motion.div>
