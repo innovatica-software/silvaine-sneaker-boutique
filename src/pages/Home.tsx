@@ -9,7 +9,7 @@ import DiamondOutlinedIcon from '@mui/icons-material/DiamondOutlined';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import ProductCard from '@/components/ProductCard';
 import SectionHeader from '@/components/SectionHeader';
-import { products } from '@/data/products';
+import { useProducts, type Product } from '@/hooks/useProducts';
 import heroImage from '@/assets/hero-sneaker.jpg';
 import { useRef } from 'react';
 
