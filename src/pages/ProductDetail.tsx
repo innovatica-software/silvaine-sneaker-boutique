@@ -33,6 +33,9 @@ import ProductCard from '@/components/ProductCard';
 import { useAppDispatch } from '@/redux/hooks';
 import { addToCart } from '@/redux/slices/cartSlice';
 import { toast } from 'sonner';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Skeleton Loading ─────────────────────────────────────────
 const ProductDetailSkeleton = () => (
