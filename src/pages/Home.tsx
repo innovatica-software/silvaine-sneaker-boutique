@@ -59,7 +59,7 @@ const Home = () => {
     { icon: <DiamondOutlinedIcon />, label: 'Premium Quality', desc: 'Italian leather' },
   ];
 
-  const productGrid = (items: typeof products, columns: { xs: number; sm: number; md: number; lg: number }) => (
+  const productGrid = (items: Product[], columns: { xs: number; sm: number; md: number; lg: number }) => (
     <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
       {items.map((product, index) => (
         <Grid size={{ xs: 12 / columns.xs, sm: 12 / columns.sm, md: 12 / columns.md, lg: 12 / columns.lg }} key={product.id}>
