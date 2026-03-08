@@ -94,9 +94,21 @@ const Footer = () => {
           </Grid>
         </Grid>
         <Divider sx={{ my: 6 }} />
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
           <Typography variant="caption" color="text.secondary">
             © 2026 Silvaine. All rights reserved. Founded by Asif Hossain.
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Built by{' '}
+            <Box
+              component="a"
+              href="https://www.facebook.com/innovatica.software"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            >
+              Innovatica Software Lab
+            </Box>
           </Typography>
           <Typography variant="caption" color="text.secondary">
             Milano, Italy
