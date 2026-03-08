@@ -117,14 +117,14 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
                 transition: 'all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)',
               }}
             >
-              <Tooltip title="Add to Wishlist" placement="top">
+              <Tooltip title={wishlisted ? "Remove from Wishlist" : "Add to Wishlist"} placement="top">
                 <IconButton
                   size="small"
-                  onClick={(e) => e.preventDefault()}
+                  onClick={handleWishlistClick}
                   sx={{
-                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: wishlisted ? 'rgba(201,169,110,0.2)' : 'rgba(255,255,255,0.1)',
                     backdropFilter: 'blur(10px)',
-                    color: '#fff',
+                    color: wishlisted ? '#C9A96E' : '#fff',
                     width: 34,
                     height: 34,
                     '&:hover': {
@@ -133,7 +133,7 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
                     },
                   }}
                 >
-                  <FavoriteBorderIcon sx={{ fontSize: '0.95rem' }} />
+                  {wishlisted ? <FavoriteIcon sx={{ fontSize: '0.95rem' }} /> : <FavoriteBorderIcon sx={{ fontSize: '0.95rem' }} />}
                 </IconButton>
               </Tooltip>
               <Tooltip title="Quick Add to Cart" placement="top">
