@@ -145,14 +145,26 @@ const ProductDetail = () => {
   const { data: product, isLoading } = useProduct(slug || '');
   const { data: allProducts = [], isLoading: relatedLoading } = useProducts();
   const dispatch = useAppDispatch();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [wishlisted, setWishlisted] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [addedToBag, setAddedToBag] = useState(false);
+
+  const wishlisted = product ? isWishlisted(product.id) : false;
+
+  const handleWishlistToggle = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (product) toggleWishlist.mutate(product.id);
+  };
 
   // Reset state when product changes
   useEffect(() => {
@@ -160,7 +172,6 @@ const ProductDetail = () => {
     setSelectedColorIndex(0);
     setQuantity(1);
     setSelectedImageIndex(0);
-    setWishlisted(false);
     setImageLoaded(false);
     setAddedToBag(false);
   }, [slug]);
