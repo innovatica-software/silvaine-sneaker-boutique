@@ -361,7 +361,7 @@ const Home = () => {
       <Box sx={{ py: { xs: 8, md: 14 } }}>
         <Container maxWidth="xl">
           <SectionHeader label="Curated Selection" title="Featured Sneakers" align="left" linkText="View All" linkTo="/shop" />
-          {productGrid(allProducts, { xs: 2, sm: 3, md: 5, lg: 6 })}
+          {productGrid(allProducts.slice(0, 10), { xs: 2, sm: 3, md: 5, lg: 5 })}
         </Container>
       </Box>
 
