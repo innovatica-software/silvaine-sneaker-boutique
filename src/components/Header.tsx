@@ -63,36 +63,6 @@ const Header = () => {
 
   return (
     <>
-      {/* Top announcement bar */}
-      <Box
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1201,
-          backgroundColor: '#C9A96E',
-          py: 0.6,
-          textAlign: 'center',
-          transition: 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
-          transform: scrolled ? 'translateY(-100%)' : 'translateY(0)',
-        }}
-      >
-        <Typography
-          variant="caption"
-          sx={{
-            color: '#0A0A0A',
-            fontFamily: '"Montserrat", sans-serif',
-            fontWeight: 500,
-            fontSize: '0.6rem',
-            letterSpacing: '0.25em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Complimentary Shipping on Orders Over $250
-        </Typography>
-      </Box>
-
       <AppBar
         position="fixed"
         elevation={0}
