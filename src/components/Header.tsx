@@ -44,6 +44,7 @@ const Header = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user, signOut } = useAuth();
+  const { data: isAdmin } = useAdminCheck();
 
   const handleSignOut = async () => {
     setAnchorEl(null);
