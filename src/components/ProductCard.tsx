@@ -1,10 +1,13 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Box, Typography, Chip, Rating, IconButton, Tooltip } from '@mui/material';
 import { motion } from 'framer-motion';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import type { Product } from '@/hooks/useProducts';
 import ProductStockIndicator from './ProductStockIndicator';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +15,21 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
+  const { user } = useAuth();
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const navigate = useNavigate();
+  const wishlisted = isWishlisted(product.id);
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    toggleWishlist.mutate(product.id);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -99,14 +117,14 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
                 transition: 'all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)',
               }}
             >
-              <Tooltip title="Add to Wishlist" placement="top">
+              <Tooltip title={wishlisted ? "Remove from Wishlist" : "Add to Wishlist"} placement="top">
                 <IconButton
                   size="small"
-                  onClick={(e) => e.preventDefault()}
+                  onClick={handleWishlistClick}
                   sx={{
-                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: wishlisted ? 'rgba(201,169,110,0.2)' : 'rgba(255,255,255,0.1)',
                     backdropFilter: 'blur(10px)',
-                    color: '#fff',
+                    color: wishlisted ? '#C9A96E' : '#fff',
                     width: 34,
                     height: 34,
                     '&:hover': {
@@ -115,7 +133,7 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
                     },
                   }}
                 >
-                  <FavoriteBorderIcon sx={{ fontSize: '0.95rem' }} />
+                  {wishlisted ? <FavoriteIcon sx={{ fontSize: '0.95rem' }} /> : <FavoriteBorderIcon sx={{ fontSize: '0.95rem' }} />}
                 </IconButton>
               </Tooltip>
               <Tooltip title="Quick Add to Cart" placement="top">

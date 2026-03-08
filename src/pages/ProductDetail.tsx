@@ -33,6 +33,9 @@ import ProductCard from '@/components/ProductCard';
 import { useAppDispatch } from '@/redux/hooks';
 import { addToCart } from '@/redux/slices/cartSlice';
 import { toast } from 'sonner';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Skeleton Loading ─────────────────────────────────────────
 const ProductDetailSkeleton = () => (
@@ -142,14 +145,26 @@ const ProductDetail = () => {
   const { data: product, isLoading } = useProduct(slug || '');
   const { data: allProducts = [], isLoading: relatedLoading } = useProducts();
   const dispatch = useAppDispatch();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [wishlisted, setWishlisted] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [addedToBag, setAddedToBag] = useState(false);
+
+  const wishlisted = product ? isWishlisted(product.id) : false;
+
+  const handleWishlistToggle = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (product) toggleWishlist.mutate(product.id);
+  };
 
   // Reset state when product changes
   useEffect(() => {
@@ -157,7 +172,6 @@ const ProductDetail = () => {
     setSelectedColorIndex(0);
     setQuantity(1);
     setSelectedImageIndex(0);
-    setWishlisted(false);
     setImageLoaded(false);
     setAddedToBag(false);
   }, [slug]);
@@ -871,7 +885,7 @@ const ProductDetail = () => {
 
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <IconButton
-                    onClick={() => setWishlisted(!wishlisted)}
+                    onClick={handleWishlistToggle}
                     sx={{
                       border: '1px solid',
                       borderColor: wishlisted ? 'rgba(201,169,110,0.3)' : 'rgba(255,255,255,0.08)',
