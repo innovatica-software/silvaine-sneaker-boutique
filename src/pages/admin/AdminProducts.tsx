@@ -1,14 +1,31 @@
 import { useState } from 'react';
-import { Box, Typography, Paper, Button, IconButton, TextField, InputAdornment, Chip, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Grid } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { motion } from 'framer-motion';
+import { Search, Plus, Edit2, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useAdminProducts } from '@/hooks/useAdmin';
 import { useCategories } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 const AdminProducts = () => {
   const { data: products = [], isLoading } = useAdminProducts();
@@ -17,6 +34,7 @@ const AdminProducts = () => {
   const [search, setSearch] = useState('');
   const [editOpen, setEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  
   const [form, setForm] = useState({
     id: '',
     name: '',
@@ -29,6 +47,7 @@ const AdminProducts = () => {
     stock: '',
     sizes: '',
     colors: '[{"name":"","hex":""}]',
+    image_url: '',
     is_new: false,
     is_best_seller: false,
     is_trending: false,
@@ -39,7 +58,11 @@ const AdminProducts = () => {
   );
 
   const openNew = () => {
-    setForm({ id: '', name: '', slug: '', description: '', sku: '', category_id: '', price: '', discount_price: '', stock: '', sizes: '', colors: '[{"name":"","hex":""}]', is_new: false, is_best_seller: false, is_trending: false });
+    setForm({ 
+      id: '', name: '', slug: '', description: '', sku: '', category_id: '', 
+      price: '', discount_price: '', stock: '', sizes: '', colors: '[{"name":"","hex":""}]', 
+      image_url: '', is_new: false, is_best_seller: false, is_trending: false 
+    });
     setEditOpen(true);
   };
 
@@ -56,6 +79,7 @@ const AdminProducts = () => {
       stock: String(p.stock),
       sizes: (p.sizes || []).join(', '),
       colors: JSON.stringify(p.colors || []),
+      image_url: p.product_images?.[0]?.url || '',
       is_new: p.is_new,
       is_best_seller: p.is_best_seller,
       is_trending: p.is_trending,
@@ -80,14 +104,38 @@ const AdminProducts = () => {
       is_trending: form.is_trending,
     };
 
-    if (form.id) {
-      await supabase.from('products').update(payload).eq('id', form.id);
-    } else {
-      await supabase.from('products').insert(payload);
+    try {
+      let productId = form.id;
+      
+      if (productId) {
+        await supabase.from('products').update(payload).eq('id', productId);
+      } else {
+        const { data, error } = await supabase.from('products').insert(payload).select('id').single();
+        if (error) throw error;
+        productId = data.id;
+      }
+      
+      // Update image if provided
+      if (form.image_url && productId) {
+        const { data: existingImages } = await supabase.from('product_images').select('id').eq('product_id', productId);
+        if (existingImages && existingImages.length > 0) {
+          await supabase.from('product_images').update({ url: form.image_url }).eq('id', existingImages[0].id);
+        } else {
+          await supabase.from('product_images').insert({
+            product_id: productId,
+            url: form.image_url,
+            sort_order: 0,
+            alt_text: form.name
+          });
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setEditOpen(false);
+    } catch (error) {
+      console.error('Error saving product:', error);
     }
-    queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-    queryClient.invalidateQueries({ queryKey: ['products'] });
-    setEditOpen(false);
   };
 
   const handleDelete = async () => {
@@ -99,143 +147,241 @@ const AdminProducts = () => {
   };
 
   if (isLoading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}><CircularProgress sx={{ color: '#C9A96E' }} /></Box>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography sx={{ fontFamily: '"Cormorant Garamond", serif', fontSize: '1.6rem', fontWeight: 300, letterSpacing: '0.08em', color: '#F5F5F5' }}>Products</Typography>
-        <Button onClick={openNew} startIcon={<AddIcon />} variant="contained" sx={{ backgroundColor: '#C9A96E', color: '#0A0A0A', fontFamily: '"Montserrat", sans-serif', fontSize: '0.65rem', letterSpacing: '0.1em', '&:hover': { backgroundColor: '#E0C992' } }}>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="font-serif text-3xl font-light tracking-wide text-foreground">Products</h2>
+        <Button onClick={openNew} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Plus className="mr-2 h-4 w-4" />
           Add Product
         </Button>
-      </Box>
+      </div>
 
-      <TextField
-        placeholder="Search products..."
-        size="small"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        InputProps={{
-          startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '1rem', color: 'rgba(255,255,255,0.3)' }} /></InputAdornment>,
-        }}
-        sx={{ mb: 3, width: { xs: '100%', md: 300 }, '& .MuiOutlinedInput-root': { backgroundColor: '#111', fontSize: '0.75rem' } }}
-      />
+      <div className="relative w-full max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search products..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9 bg-muted/50 border-white/10"
+        />
+      </div>
 
-      <Paper sx={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+      <div className="rounded-md border border-white/5 bg-[#111] overflow-hidden shadow-sm">
         {/* Table Header */}
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, px: 2.5, py: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)', gap: 2 }}>
-          {['Product', 'SKU', 'Category', 'Price', 'Stock', 'Status', 'Actions'].map((h) => (
-            <Typography key={h} sx={{ fontFamily: '"Montserrat", sans-serif', fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.15em', textTransform: 'uppercase', flex: h === 'Product' ? 2 : 1, minWidth: h === 'Actions' ? 80 : undefined }}>
-              {h}
-            </Typography>
+        <div className="hidden md:flex items-center px-6 py-3 border-b border-white/5 bg-black/40 text-[0.65rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+          <div className="flex-[2]">Product</div>
+          <div className="flex-1">SKU</div>
+          <div className="flex-1">Category</div>
+          <div className="flex-1">Price</div>
+          <div className="flex-1">Stock</div>
+          <div className="flex-1">Status</div>
+          <div className="w-20 text-right">Actions</div>
+        </div>
+
+        {/* Table Body */}
+        <div className="divide-y divide-white/5">
+          {filtered.map((p: any, i: number) => (
+            <motion.div 
+              key={p.id} 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              transition={{ delay: i * 0.03 }}
+              className="flex flex-col md:flex-row md:items-center px-6 py-4 gap-4 md:gap-0 hover:bg-white/[0.02] transition-colors"
+            >
+              <div className="flex-[2] flex items-center gap-4">
+                <div className="h-12 w-12 rounded-md bg-black/50 overflow-hidden flex-shrink-0 border border-white/10 flex items-center justify-center">
+                  {p.product_images?.[0]?.url ? (
+                    <img src={p.product_images[0].url} alt={p.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
+                  )}
+                </div>
+                <span className="font-medium text-sm text-foreground">{p.name}</span>
+              </div>
+              <div className="flex-1 text-sm text-muted-foreground font-mono text-xs">{p.sku || '—'}</div>
+              <div className="flex-1 text-sm text-muted-foreground">{p.categories?.name || '—'}</div>
+              <div className="flex-1 flex flex-col">
+                <span className="text-primary font-medium text-sm">€{Number(p.price).toFixed(2)}</span>
+                {p.discount_price && (
+                  <span className="text-xs text-muted-foreground line-through">€{Number(p.discount_price).toFixed(2)}</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <Badge variant={p.stock <= 10 ? 'destructive' : 'secondary'} className="font-mono text-[10px]">
+                  {p.stock} in stock
+                </Badge>
+              </div>
+              <div className="flex-1 flex flex-wrap gap-1.5">
+                {p.is_new && <Badge variant="outline" className="text-primary border-primary/20 bg-primary/10 text-[10px]">New</Badge>}
+                {p.is_best_seller && <Badge variant="outline" className="text-green-400 border-green-400/20 bg-green-400/10 text-[10px]">Best</Badge>}
+              </div>
+              <div className="w-20 flex justify-end gap-1">
+                <Button variant="ghost" size="icon" onClick={() => openEdit(p)} className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors">
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
           ))}
-        </Box>
 
-        {filtered.map((p: any, i: number) => (
-          <motion.div key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}>
-            <Box sx={{
-              display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { md: 'center' }, px: 2.5, py: 1.5,
-              borderBottom: '1px solid rgba(255,255,255,0.03)', gap: { xs: 1, md: 2 },
-              '&:hover': { backgroundColor: 'rgba(201,169,110,0.03)' }, transition: 'background-color 0.2s',
-            }}>
-              <Box sx={{ flex: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Box sx={{ width: 36, height: 36, backgroundColor: '#1a1a1a', borderRadius: '3px', overflow: 'hidden', flexShrink: 0 }}>
-                  {p.product_images?.[0]?.url && <Box component="img" src={p.product_images[0].url} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                </Box>
-                <Typography sx={{ fontFamily: '"Montserrat", sans-serif', fontSize: '0.72rem', color: '#F5F5F5' }}>{p.name}</Typography>
-              </Box>
-              <Typography sx={{ flex: 1, fontFamily: '"Montserrat", sans-serif', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>{p.sku}</Typography>
-              <Typography sx={{ flex: 1, fontFamily: '"Montserrat", sans-serif', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>{p.categories?.name || '—'}</Typography>
-              <Box sx={{ flex: 1 }}>
-                <Typography sx={{ fontFamily: '"Montserrat", sans-serif', fontSize: '0.72rem', color: '#C9A96E' }}>€{Number(p.price).toFixed(2)}</Typography>
-                {p.discount_price && <Typography sx={{ fontFamily: '"Montserrat", sans-serif', fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', textDecoration: 'line-through' }}>€{Number(p.discount_price).toFixed(2)}</Typography>}
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <Chip label={p.stock} size="small" sx={{ backgroundColor: p.stock <= 10 ? 'rgba(255,112,67,0.1)' : 'rgba(76,175,80,0.1)', color: p.stock <= 10 ? '#FF7043' : '#4CAF50', fontSize: '0.6rem', height: 22 }} />
-              </Box>
-              <Box sx={{ flex: 1, display: 'flex', gap: 0.5 }}>
-                {p.is_new && <Chip label="New" size="small" sx={{ fontSize: '0.45rem', height: 18, backgroundColor: 'rgba(201,169,110,0.1)', color: '#C9A96E' }} />}
-                {p.is_best_seller && <Chip label="Best" size="small" sx={{ fontSize: '0.45rem', height: 18, backgroundColor: 'rgba(76,175,80,0.1)', color: '#4CAF50' }} />}
-              </Box>
-              <Box sx={{ minWidth: 80, display: 'flex', gap: 0.5 }}>
-                <IconButton size="small" onClick={() => openEdit(p)} sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#C9A96E' } }}>
-                  <EditIcon sx={{ fontSize: '0.9rem' }} />
-                </IconButton>
-                <IconButton size="small" onClick={() => setDeleteId(p.id)} sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#CF6679' } }}>
-                  <DeleteIcon sx={{ fontSize: '0.9rem' }} />
-                </IconButton>
-              </Box>
-            </Box>
-          </motion.div>
-        ))}
+          {filtered.length === 0 && (
+            <div className="px-6 py-12 text-center text-muted-foreground font-mono text-sm">
+              No products found.
+            </div>
+          )}
+        </div>
+      </div>
 
-        {filtered.length === 0 && (
-          <Typography sx={{ textAlign: 'center', py: 6, color: 'rgba(255,255,255,0.3)', fontFamily: '"Montserrat", sans-serif', fontSize: '0.75rem' }}>No products found</Typography>
-        )}
-      </Paper>
+      {/* Product Sheet (Modal) */}
+      <Sheet open={editOpen} onOpenChange={setEditOpen}>
+        <SheetContent className="w-full sm:max-w-2xl bg-[#0a0a0a] border-white/10 overflow-y-auto sm:rounded-l-2xl p-0">
+          <SheetHeader className="px-6 py-6 border-b border-white/5 sticky top-0 bg-[#0a0a0a]/95 backdrop-blur z-10">
+            <SheetTitle className="font-serif text-2xl tracking-wide text-foreground">
+              {form.id ? 'Edit Product' : 'New Product'}
+            </SheetTitle>
+          </SheetHeader>
+          
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 pb-28">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-muted-foreground text-xs uppercase tracking-wider">Product Name *</Label>
+              <Input id="name" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="bg-black/50 border-white/10 focus-visible:ring-primary focus-visible:border-primary transition-all" />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="slug" className="text-muted-foreground text-xs uppercase tracking-wider">Slug (auto-generated)</Label>
+              <Input id="slug" value={form.slug} onChange={(e) => setForm({...form, slug: e.target.value})} className="bg-black/50 border-white/10 focus-visible:ring-primary focus-visible:border-primary transition-all" />
+            </div>
 
-      {/* Edit/Add Dialog */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { backgroundColor: '#141414', backgroundImage: 'none' } }}>
-        <DialogTitle sx={{ fontFamily: '"Cormorant Garamond", serif', letterSpacing: '0.08em' }}>
-          {form.id ? 'Edit Product' : 'New Product'}
-        </DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField fullWidth label="Product Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="small" />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField fullWidth label="Slug" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} size="small" />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField fullWidth label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} multiline rows={3} size="small" />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField fullWidth label="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} size="small" />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField fullWidth label="Price (€)" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} size="small" type="number" />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField fullWidth label="Discount Price (€)" value={form.discount_price} onChange={(e) => setForm({ ...form, discount_price: e.target.value })} size="small" type="number" />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField fullWidth label="Stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} size="small" type="number" />
-            </Grid>
-            <Grid size={{ xs: 12, md: 8 }}>
-              <TextField fullWidth label="Sizes (comma separated)" value={form.sizes} onChange={(e) => setForm({ ...form, sizes: e.target.value })} size="small" placeholder="38, 39, 40, 41, 42" />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField fullWidth label="Colors (JSON)" value={form.colors} onChange={(e) => setForm({ ...form, colors: e.target.value })} size="small" placeholder='[{"name":"Black","hex":"#000"}]' />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth select label="Category" value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} size="small"
-                SelectProps={{ native: true }}
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="description" className="text-muted-foreground text-xs uppercase tracking-wider">Description</Label>
+              <Textarea id="description" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="bg-black/50 border-white/10 min-h-[120px] resize-none focus-visible:ring-primary focus-visible:border-primary transition-all" />
+            </div>
+
+            <div className="space-y-2 md:col-span-2 p-5 bg-white/[0.02] border border-white/5 rounded-xl">
+              <Label htmlFor="image_url" className="text-muted-foreground text-xs uppercase tracking-wider mb-2 block">Main Image URL</Label>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Input id="image_url" placeholder="https://example.com/image.jpg" value={form.image_url} onChange={(e) => setForm({...form, image_url: e.target.value})} className="bg-black/50 border-white/10 focus-visible:ring-primary focus-visible:border-primary transition-all" />
+                  <p className="text-[10px] text-muted-foreground mt-2">Provide a direct URL to the product image.</p>
+                </div>
+                {form.image_url && (
+                  <div className="h-20 w-20 rounded-md overflow-hidden border border-white/10 flex-shrink-0 bg-black/50">
+                    <img src={form.image_url} alt="Preview" className="h-full w-full object-cover" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sku" className="text-muted-foreground text-xs uppercase tracking-wider">SKU</Label>
+              <Input id="sku" value={form.sku} onChange={(e) => setForm({...form, sku: e.target.value})} className="bg-black/50 border-white/10 font-mono text-sm focus-visible:ring-primary focus-visible:border-primary transition-all" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category" className="text-muted-foreground text-xs uppercase tracking-wider">Category</Label>
+              <select 
+                id="category"
+                value={form.category_id} 
+                onChange={(e) => setForm({...form, category_id: e.target.value})}
+                className="flex h-10 w-full rounded-md border border-white/10 bg-black/50 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50 appearance-none transition-all"
               >
-                <option value="">No Category</option>
-                {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </TextField>
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setEditOpen(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ backgroundColor: '#C9A96E', color: '#0A0A0A', '&:hover': { backgroundColor: '#E0C992' } }}>Save</Button>
-        </DialogActions>
-      </Dialog>
+                <option value="" className="bg-[#111]">No Category</option>
+                {categories.map((c: any) => (
+                  <option key={c.id} value={c.id} className="bg-[#111]">{c.name}</option>
+                ))}
+              </select>
+            </div>
 
-      {/* Delete Confirm */}
-      <Dialog open={!!deleteId} onClose={() => setDeleteId(null)} PaperProps={{ sx: { backgroundColor: '#141414', backgroundImage: 'none' } }}>
-        <DialogTitle sx={{ fontFamily: '"Cormorant Garamond", serif' }}>Delete Product?</DialogTitle>
-        <DialogContent><Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>This action cannot be undone.</Typography></DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteId(null)} sx={{ color: 'rgba(255,255,255,0.5)' }}>Cancel</Button>
-          <Button onClick={handleDelete} sx={{ color: '#CF6679' }}>Delete</Button>
-        </DialogActions>
+            <div className="space-y-2">
+              <Label htmlFor="price" className="text-muted-foreground text-xs uppercase tracking-wider">Price (€) *</Label>
+              <Input id="price" type="number" step="0.01" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})} className="bg-black/50 border-white/10 font-mono focus-visible:ring-primary focus-visible:border-primary transition-all" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="discount_price" className="text-muted-foreground text-xs uppercase tracking-wider">Discount Price (€)</Label>
+              <Input id="discount_price" type="number" step="0.01" value={form.discount_price} onChange={(e) => setForm({...form, discount_price: e.target.value})} className="bg-black/50 border-white/10 font-mono focus-visible:ring-primary focus-visible:border-primary transition-all" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stock" className="text-muted-foreground text-xs uppercase tracking-wider">Stock Quantity *</Label>
+              <Input id="stock" type="number" value={form.stock} onChange={(e) => setForm({...form, stock: e.target.value})} className="bg-black/50 border-white/10 font-mono focus-visible:ring-primary focus-visible:border-primary transition-all" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sizes" className="text-muted-foreground text-xs uppercase tracking-wider">Sizes (comma separated)</Label>
+              <Input id="sizes" placeholder="38, 39, 40, 41, 42" value={form.sizes} onChange={(e) => setForm({...form, sizes: e.target.value})} className="bg-black/50 border-white/10 font-mono text-sm focus-visible:ring-primary focus-visible:border-primary transition-all" />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="colors" className="text-muted-foreground text-xs uppercase tracking-wider">Colors (JSON format)</Label>
+              <Input id="colors" placeholder='[{"name":"Black","hex":"#000000"}]' value={form.colors} onChange={(e) => setForm({...form, colors: e.target.value})} className="bg-black/50 border-white/10 font-mono text-sm focus-visible:ring-primary focus-visible:border-primary transition-all" />
+            </div>
+
+            <div className="space-y-5 md:col-span-2 p-5 bg-white/[0.02] rounded-xl border border-white/5 mt-2">
+              <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-4">Product Status & Tags</h4>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">New Arrival</Label>
+                  <p className="text-[11px] text-muted-foreground">Mark product as a new arrival</p>
+                </div>
+                <Switch checked={form.is_new} onCheckedChange={(c) => setForm({...form, is_new: c})} />
+              </div>
+              <div className="h-px bg-white/5 my-2" />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">Best Seller</Label>
+                  <p className="text-[11px] text-muted-foreground">Highlight as a best seller</p>
+                </div>
+                <Switch checked={form.is_best_seller} onCheckedChange={(c) => setForm({...form, is_best_seller: c})} />
+              </div>
+              <div className="h-px bg-white/5 my-2" />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">Trending</Label>
+                  <p className="text-[11px] text-muted-foreground">Show in trending sections</p>
+                </div>
+                <Switch checked={form.is_trending} onCheckedChange={(c) => setForm({...form, is_trending: c})} />
+              </div>
+            </div>
+          </div>
+          
+          <SheetFooter className="absolute bottom-0 left-0 right-0 px-6 py-4 bg-[#0a0a0a]/95 backdrop-blur border-t border-white/5 flex-row justify-end gap-3 z-10">
+            <Button variant="outline" onClick={() => setEditOpen(false)} className="border-white/10 hover:bg-white/5 text-sm h-10 px-6">
+              Cancel
+            </Button>
+            <Button onClick={handleSave} className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm h-10 px-6">
+              Save Product
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="bg-[#111] border-white/10 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl tracking-wide text-foreground">Delete Product</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 text-sm text-muted-foreground leading-relaxed">
+            Are you sure you want to delete this product? This action cannot be undone and will permanently remove the product from the database.
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteId(null)} className="border-white/10 hover:bg-white/5">Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Delete Product</Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 
