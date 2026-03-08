@@ -15,12 +15,13 @@ import {
   Button,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CloseIcon from '@mui/icons-material/Close';
 import { motion } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
-import { products, categories } from '@/data/products';
+import { useProducts, useCategories } from '@/hooks/useProducts';
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'popularity';
 
@@ -31,6 +32,11 @@ const Shop = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const { data: products = [], isLoading } = useProducts();
+  const { data: dbCategories = [] } = useCategories();
+
+  const categories = ['All', ...dbCategories.map((c: any) => c.name)];
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -59,7 +65,7 @@ const Shop = () => {
     }
 
     return result;
-  }, [selectedCategory, sortBy, priceRange]);
+  }, [products, selectedCategory, sortBy, priceRange]);
 
   const FilterContent = () => (
     <Box sx={{ p: isMobile ? 3 : 0 }}>
@@ -120,31 +126,16 @@ const Shop = () => {
   return (
     <Box sx={{ py: { xs: 8, md: 12 } }}>
       <Container maxWidth="lg">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 10 } }}>
-            <Typography variant="subtitle1" sx={{ color: 'primary.main', mb: 2 }}>
-              Collection
-            </Typography>
-            <Typography variant="h1" sx={{ fontSize: { xs: '2rem', md: '3.5rem' } }}>
-              Shop All
-            </Typography>
+            <Typography variant="subtitle1" sx={{ color: 'primary.main', mb: 2 }}>Collection</Typography>
+            <Typography variant="h1" sx={{ fontSize: { xs: '2rem', md: '3.5rem' } }}>Shop All</Typography>
           </Box>
         </motion.div>
 
-        {/* Controls */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6 }}>
           {isMobile ? (
-            <Button
-              startIcon={<FilterListIcon />}
-              onClick={() => setFilterOpen(true)}
-              variant="outlined"
-              size="small"
-            >
+            <Button startIcon={<FilterListIcon />} onClick={() => setFilterOpen(true)} variant="outlined" size="small">
               Filters
             </Button>
           ) : (
@@ -169,11 +160,7 @@ const Shop = () => {
 
           <FormControl size="small" sx={{ minWidth: 160 }}>
             <InputLabel>Sort By</InputLabel>
-            <Select
-              value={sortBy}
-              label="Sort By"
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-            >
+            <Select value={sortBy} label="Sort By" onChange={(e) => setSortBy(e.target.value as SortOption)}>
               <MenuItem value="newest">Newest</MenuItem>
               <MenuItem value="price-asc">Price: Low to High</MenuItem>
               <MenuItem value="price-desc">Price: High to Low</MenuItem>
@@ -182,37 +169,33 @@ const Shop = () => {
           </FormControl>
         </Box>
 
-        {/* Products */}
-        <Grid container spacing={4}>
-          {filteredProducts.map((product, index) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={product.id}>
-              <ProductCard product={product} index={index} />
-            </Grid>
-          ))}
-        </Grid>
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+            <CircularProgress sx={{ color: 'primary.main' }} />
+          </Box>
+        ) : (
+          <Grid container spacing={4}>
+            {filteredProducts.map((product, index) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={product.id}>
+                <ProductCard product={product} index={index} />
+              </Grid>
+            ))}
+          </Grid>
+        )}
 
-        {filteredProducts.length === 0 && (
+        {!isLoading && filteredProducts.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 12 }}>
-            <Typography variant="h5" color="text.secondary">
-              No products found
-            </Typography>
+            <Typography variant="h5" color="text.secondary">No products found</Typography>
           </Box>
         )}
       </Container>
 
-      {/* Mobile filter drawer */}
       <Drawer
         anchor="bottom"
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
         PaperProps={{
-          sx: {
-            backgroundColor: 'background.default',
-            backgroundImage: 'none',
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            maxHeight: '70vh',
-          },
+          sx: { backgroundColor: 'background.default', backgroundImage: 'none', borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '70vh' },
         }}
       >
         <FilterContent />
