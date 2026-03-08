@@ -17,7 +17,7 @@ const Footer = () => {
     >
       <Container maxWidth="lg">
         <Grid container spacing={8}>
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Typography variant="h5" sx={{ letterSpacing: '0.3em', mb: 3 }}>
               SILVAINE
             </Typography>
@@ -25,7 +25,7 @@ const Footer = () => {
               Premium sneakers handcrafted in Milano, Italy. Where heritage meets modern luxury.
             </Typography>
           </Grid>
-          <Grid item xs={6} md={2}>
+          <Grid size={{ xs: 6, md: 2 }}>
             <Typography variant="subtitle1" sx={{ mb: 3, color: 'primary.main' }}>
               Shop
             </Typography>
@@ -48,7 +48,7 @@ const Footer = () => {
               </Typography>
             ))}
           </Grid>
-          <Grid item xs={6} md={2}>
+          <Grid size={{ xs: 6, md: 2 }}>
             <Typography variant="subtitle1" sx={{ mb: 3, color: 'primary.main' }}>
               Company
             </Typography>
@@ -76,7 +76,7 @@ const Footer = () => {
               </Typography>
             ))}
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Typography variant="subtitle1" sx={{ mb: 3, color: 'primary.main' }}>
               Newsletter
             </Typography>
