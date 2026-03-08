@@ -885,7 +885,7 @@ const ProductDetail = () => {
 
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <IconButton
-                    onClick={() => setWishlisted(!wishlisted)}
+                    onClick={handleWishlistToggle}
                     sx={{
                       border: '1px solid',
                       borderColor: wishlisted ? 'rgba(201,169,110,0.3)' : 'rgba(255,255,255,0.08)',
