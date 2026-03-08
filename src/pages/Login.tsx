@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -28,10 +29,26 @@ const Login = () => {
     setError('');
     setLoading(true);
     const { error } = await signIn(email, password);
-    setLoading(false);
     if (error) {
+      setLoading(false);
       setError(error.message);
+      return;
+    }
+    // Check if user has admin role
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (currentUser) {
+      const { data: isAdmin } = await supabase.rpc('has_role', {
+        _user_id: currentUser.id,
+        _role: 'admin',
+      });
+      setLoading(false);
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } else {
+      setLoading(false);
       navigate('/');
     }
   };

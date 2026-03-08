@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAdminCheck } from '@/hooks/useAdmin';
 import {
   AppBar,
   Toolbar,
@@ -43,6 +44,7 @@ const Header = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user, signOut } = useAuth();
+  const { data: isAdmin } = useAdminCheck();
 
   const handleSignOut = async () => {
     setAnchorEl(null);
@@ -136,6 +138,11 @@ const Header = () => {
                       {user.email}
                     </Typography>
                   </MenuItem>
+                  {isAdmin && (
+                    <MenuItem onClick={() => { setAnchorEl(null); navigate('/admin'); }}>
+                      <Typography variant="body2">Admin Panel</Typography>
+                    </MenuItem>
+                  )}
                   <MenuItem onClick={handleSignOut}>
                     <LogoutIcon sx={{ fontSize: '1rem', mr: 1 }} /> Sign Out
                   </MenuItem>
