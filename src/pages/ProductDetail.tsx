@@ -30,6 +30,7 @@ const ProductDetail = () => {
 
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   if (isLoading) {
     return (
@@ -50,7 +51,7 @@ const ProductDetail = () => {
 
   const relatedProducts = allProducts.filter((p) => p.id !== product.id).slice(0, 3);
   const selectedColor = product.colors[0];
-  const mainImage = product.images[0] || '/placeholder.svg';
+  const mainImage = product.images[selectedImageIndex] || product.images[0] || '/placeholder.svg';
 
   const handleAddToCart = () => {
     if (!selectedSize) return;
@@ -89,6 +90,33 @@ const ProductDetail = () => {
                   <Chip label="NEW" size="small" sx={{ position: 'absolute', top: 20, left: 20, backgroundColor: 'primary.main', color: 'primary.contrastText', fontSize: '0.6rem', letterSpacing: '0.15em' }} />
                 )}
               </Box>
+              {/* Thumbnail Gallery */}
+              {product.images.length > 1 && (
+                <Box sx={{ display: 'flex', gap: 1, mt: 1.5, overflowX: 'auto', pb: 0.5 }}>
+                  {product.images.map((img, i) => (
+                    <Box
+                      key={i}
+                      onClick={() => setSelectedImageIndex(i)}
+                      sx={{
+                        width: 72,
+                        height: 72,
+                        minWidth: 72,
+                        borderRadius: 0.5,
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        border: '2px solid',
+                        borderColor: selectedImageIndex === i ? 'primary.main' : 'transparent',
+                        opacity: selectedImageIndex === i ? 1 : 0.6,
+                        transition: 'all 0.3s ease',
+                        '&:hover': { opacity: 1, borderColor: 'primary.main' },
+                        backgroundColor: '#141414',
+                      }}
+                    >
+                      <Box component="img" src={img} alt={`${product.name} view ${i + 1}`} loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </motion.div>
           </Grid>
 
