@@ -75,64 +75,180 @@ const Home = () => {
         ref={heroRef}
         sx={{
           position: 'relative',
-          height: { xs: '85vh', md: '100vh' },
+          height: { xs: '100vh', md: '100vh' },
           display: 'flex',
           alignItems: 'center',
           overflow: 'hidden',
         }}
       >
+        {/* Multi-layer gradient overlay for cinematic depth */}
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(180deg, rgba(10,10,10,0.3) 0%, rgba(10,10,10,0.5) 40%, rgba(10,10,10,0.88) 100%)',
+            background: `
+              linear-gradient(180deg, rgba(10,10,10,0.15) 0%, rgba(10,10,10,0.35) 30%, rgba(10,10,10,0.7) 70%, rgba(10,10,10,0.95) 100%),
+              radial-gradient(ellipse at 20% 50%, rgba(201,169,110,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 20%, rgba(201,169,110,0.03) 0%, transparent 50%)
+            `,
             zIndex: 1,
           }}
         />
+
+        {/* Subtle gold vignette top */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent 10%, rgba(201,169,110,0.3) 50%, transparent 90%)',
+            zIndex: 3,
+          }}
+        />
+
+        {/* Parallax hero image */}
         <motion.div style={{ position: 'absolute', inset: 0, y: heroImageY }}>
           <Box
             component="img"
             src={heroImage}
             alt="Silvaine Premium Sneakers — Handcrafted Italian Luxury"
-            sx={{ width: '100%', height: '120%', objectFit: 'cover' }}
+            sx={{ width: '100%', height: '120%', objectFit: 'cover', objectPosition: { xs: 'center 40%', md: 'center center' } }}
           />
         </motion.div>
 
+        {/* Hero Content */}
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
           <motion.div style={{ opacity: heroOpacity }}>
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.4 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-                <Box sx={{ width: 40, height: '1px', backgroundColor: 'primary.main' }} />
-                <Typography variant="subtitle1" sx={{ color: 'primary.main', fontSize: '0.7rem' }}>
+            {/* Subtitle with animated line */}
+            <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.3, ease: [0.25, 0.8, 0.25, 1] }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, md: 2.5 }, mb: { xs: 3, md: 5 } }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: 50 }}
+                  transition={{ duration: 0.8, delay: 0.8 }}
+                >
+                  <Box sx={{ height: '1px', backgroundColor: 'primary.main', width: '100%' }} />
+                </motion.div>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    color: 'primary.main',
+                    fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.7rem' },
+                    letterSpacing: '0.3em',
+                  }}
+                >
                   Handcrafted in Milano
                 </Typography>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: 20 }}
+                  transition={{ duration: 0.6, delay: 1 }}
+                >
+                  <Box sx={{ height: '1px', backgroundColor: 'rgba(201,169,110,0.3)', width: '100%' }} />
+                </motion.div>
               </Box>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.6 }}>
-              <Typography
-                variant="h1"
-                component="h1"
-                sx={{ fontSize: { xs: '2.8rem', sm: '3.5rem', md: '5rem', lg: '6.5rem' }, lineHeight: 1.02, mb: 4, maxWidth: 750 }}
-              >
-                Walk in
-                <br />
-                <Box component="span" sx={{ color: 'primary.main' }}>Elegance</Box>
-              </Typography>
+            {/* Main Heading — cinematic stagger */}
+            <Box sx={{ mb: { xs: 3, md: 5 } }}>
+              <motion.div initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}>
+                <Typography
+                  variant="h1"
+                  component="h1"
+                  sx={{
+                    fontSize: { xs: '3rem', sm: '4rem', md: '5.5rem', lg: '7rem' },
+                    lineHeight: { xs: 1.05, md: 0.95 },
+                    fontWeight: 200,
+                    letterSpacing: { xs: '0.08em', md: '0.12em' },
+                  }}
+                >
+                  Walk in
+                </Typography>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}>
+                <Typography
+                  variant="h1"
+                  component="span"
+                  sx={{
+                    fontSize: { xs: '3.5rem', sm: '4.5rem', md: '6rem', lg: '8rem' },
+                    lineHeight: { xs: 1.1, md: 1 },
+                    fontWeight: 200,
+                    letterSpacing: { xs: '0.08em', md: '0.12em' },
+                    color: 'primary.main',
+                    display: 'block',
+                    textShadow: '0 0 80px rgba(201,169,110,0.15)',
+                  }}
+                >
+                  Elegance
+                </Typography>
+              </motion.div>
+            </Box>
+
+            {/* Divider accent */}
+            <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.8, delay: 1, ease: 'easeOut' }} style={{ transformOrigin: 'left' }}>
+              <Box sx={{ width: { xs: 50, md: 80 }, height: '2px', background: 'linear-gradient(90deg, #C9A96E, transparent)', mb: { xs: 3, md: 4 } }} />
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.8 }}>
-              <Typography variant="body1" sx={{ color: 'text.secondary', mb: 6, maxWidth: 420, fontSize: '0.9rem', lineHeight: 1.9 }}>
+            {/* Description */}
+            <motion.div initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 1.1 }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: 'rgba(255,255,255,0.65)',
+                  mb: { xs: 4, md: 6 },
+                  maxWidth: { xs: 300, sm: 380, md: 440 },
+                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.92rem' },
+                  lineHeight: 2,
+                  letterSpacing: '0.04em',
+                }}
+              >
                 Premium Italian leather sneakers designed for those who appreciate the finer things in life.
               </Typography>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 1 }}>
-              <Box sx={{ display: 'flex', gap: 2.5, flexWrap: 'wrap' }}>
-                <Button component={Link} to="/shop" variant="contained" endIcon={<ArrowForwardIcon />} sx={{ px: 5, py: 1.8 }}>
-                  Shop Now
+            {/* CTA Buttons */}
+            <motion.div initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 1.3 }}>
+              <Box sx={{ display: 'flex', gap: { xs: 1.5, md: 2.5 }, flexWrap: 'wrap' }}>
+                <Button
+                  component={Link}
+                  to="/shop"
+                  variant="contained"
+                  endIcon={<ArrowForwardIcon />}
+                  sx={{
+                    px: { xs: 3.5, md: 5 },
+                    py: { xs: 1.4, md: 1.8 },
+                    fontSize: { xs: '0.65rem', md: '0.75rem' },
+                    background: 'linear-gradient(135deg, #C9A96E 0%, #E0C992 100%)',
+                    boxShadow: '0 4px 30px rgba(201,169,110,0.25)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #E0C992 0%, #C9A96E 100%)',
+                      boxShadow: '0 6px 40px rgba(201,169,110,0.35)',
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
+                >
+                  Shop Collection
                 </Button>
-                <Button component={Link} to="/about" variant="outlined" sx={{ px: 5, py: 1.8 }}>
+                <Button
+                  component={Link}
+                  to="/about"
+                  variant="outlined"
+                  sx={{
+                    px: { xs: 3.5, md: 5 },
+                    py: { xs: 1.4, md: 1.8 },
+                    fontSize: { xs: '0.65rem', md: '0.75rem' },
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    color: 'rgba(255,255,255,0.8)',
+                    backdropFilter: 'blur(10px)',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
+                      backgroundColor: 'rgba(201,169,110,0.05)',
+                    },
+                  }}
+                >
                   Our Story
                 </Button>
               </Box>
@@ -140,14 +256,83 @@ const Home = () => {
           </motion.div>
         </Container>
 
+        {/* Bottom stats bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.8, duration: 0.8 }}
+          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2 }}
+        >
+          <Box
+            sx={{
+              borderTop: '1px solid rgba(201,169,110,0.1)',
+              background: 'linear-gradient(180deg, transparent, rgba(10,10,10,0.6))',
+              backdropFilter: 'blur(20px)',
+              py: { xs: 2, md: 3 },
+              px: { xs: 2, md: 6 },
+            }}
+          >
+            <Container maxWidth="lg">
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: { xs: 'center', md: 'space-between' },
+                  alignItems: 'center',
+                  gap: { xs: 3, md: 4 },
+                  flexWrap: 'wrap',
+                }}
+              >
+                {[
+                  { value: '100%', label: 'Italian Leather' },
+                  { value: 'Est. 2024', label: 'Milano, Italy' },
+                  { value: '2,400+', label: 'Happy Clients' },
+                  { value: '4.9★', label: 'Avg Rating' },
+                ].map((stat, i) => (
+                  <Box key={i} sx={{ textAlign: 'center', display: { xs: i > 1 ? 'none' : 'block', sm: 'block' } }}>
+                    <Typography
+                      sx={{
+                        fontFamily: '"Cormorant Garamond", serif',
+                        fontSize: { xs: '1rem', md: '1.2rem' },
+                        fontWeight: 300,
+                        color: 'primary.main',
+                        letterSpacing: '0.05em',
+                        lineHeight: 1,
+                        mb: 0.3,
+                      }}
+                    >
+                      {stat.value}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: '"Montserrat", sans-serif',
+                        fontSize: { xs: '0.45rem', md: '0.5rem' },
+                        fontWeight: 400,
+                        color: 'rgba(255,255,255,0.4)',
+                        letterSpacing: '0.2em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {stat.label}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Container>
+          </Box>
+        </motion.div>
+
+        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 2, duration: 1 }}
-          style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}
+          transition={{ delay: 2.5, duration: 1 }}
+          style={{ position: 'absolute', bottom: 80, right: 40, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
         >
+          <Typography sx={{ fontFamily: '"Montserrat", sans-serif', fontSize: '0.45rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.2em', writingMode: { xs: 'horizontal-tb', md: 'vertical-rl' }, textTransform: 'uppercase', display: { xs: 'none', md: 'block' } }}>
+            Scroll
+          </Typography>
           <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
-            <Box sx={{ width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+            <Box sx={{ width: 1, height: 30, backgroundColor: 'rgba(201,169,110,0.3)', display: { xs: 'none', md: 'block' } }} />
           </motion.div>
         </motion.div>
       </Box>
