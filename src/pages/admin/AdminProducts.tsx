@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, Edit2, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Loader2, Image as ImageIcon, X } from 'lucide-react';
 import { useAdminProducts } from '@/hooks/useAdmin';
 import { useCategories } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +34,7 @@ const AdminProducts = () => {
   const [search, setSearch] = useState('');
   const [editOpen, setEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState('');
   
   const [form, setForm] = useState({
     id: '',
@@ -47,7 +48,7 @@ const AdminProducts = () => {
     stock: '',
     sizes: '',
     colors: '[{"name":"","hex":""}]',
-    image_url: '',
+    image_urls: [] as string[],
     is_new: false,
     is_best_seller: false,
     is_trending: false,
@@ -61,12 +62,16 @@ const AdminProducts = () => {
     setForm({ 
       id: '', name: '', slug: '', description: '', sku: '', category_id: '', 
       price: '', discount_price: '', stock: '', sizes: '', colors: '[{"name":"","hex":""}]', 
-      image_url: '', is_new: false, is_best_seller: false, is_trending: false 
+      image_urls: [], is_new: false, is_best_seller: false, is_trending: false 
     });
+    setNewImageUrl('');
     setEditOpen(true);
   };
 
   const openEdit = (p: any) => {
+    const images = (p.product_images || [])
+      .sort((a: any, b: any) => a.sort_order - b.sort_order)
+      .map((img: any) => img.url);
     setForm({
       id: p.id,
       name: p.name,
@@ -79,12 +84,25 @@ const AdminProducts = () => {
       stock: String(p.stock),
       sizes: (p.sizes || []).join(', '),
       colors: JSON.stringify(p.colors || []),
-      image_url: p.product_images?.[0]?.url || '',
+      image_urls: images,
       is_new: p.is_new,
       is_best_seller: p.is_best_seller,
       is_trending: p.is_trending,
     });
+    setNewImageUrl('');
     setEditOpen(true);
+  };
+
+  const addImageUrl = () => {
+    const url = newImageUrl.trim();
+    if (url && !form.image_urls.includes(url)) {
+      setForm({ ...form, image_urls: [...form.image_urls, url] });
+      setNewImageUrl('');
+    }
+  };
+
+  const removeImageUrl = (index: number) => {
+    setForm({ ...form, image_urls: form.image_urls.filter((_, i) => i !== index) });
   };
 
   const handleSave = async () => {
@@ -115,18 +133,18 @@ const AdminProducts = () => {
         productId = data.id;
       }
       
-      // Update image if provided
-      if (form.image_url && productId) {
-        const { data: existingImages } = await supabase.from('product_images').select('id').eq('product_id', productId);
-        if (existingImages && existingImages.length > 0) {
-          await supabase.from('product_images').update({ url: form.image_url }).eq('id', existingImages[0].id);
-        } else {
-          await supabase.from('product_images').insert({
+      // Sync product_images: delete all then re-insert
+      if (productId) {
+        await supabase.from('product_images').delete().eq('product_id', productId);
+        
+        if (form.image_urls.length > 0) {
+          const imageRows = form.image_urls.map((url, i) => ({
             product_id: productId,
-            url: form.image_url,
-            sort_order: 0,
-            alt_text: form.name
-          });
+            url,
+            sort_order: i,
+            alt_text: form.name,
+          }));
+          await supabase.from('product_images').insert(imageRows);
         }
       }
       
@@ -175,7 +193,6 @@ const AdminProducts = () => {
       </div>
 
       <div className="rounded-md border border-white/5 bg-[#111] overflow-hidden shadow-sm">
-        {/* Table Header */}
         <div className="hidden md:flex items-center px-6 py-3 border-b border-white/5 bg-black/40 text-[0.65rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
           <div className="flex-[2]">Product</div>
           <div className="flex-1">SKU</div>
@@ -186,7 +203,6 @@ const AdminProducts = () => {
           <div className="w-20 text-right">Actions</div>
         </div>
 
-        {/* Table Body */}
         <div className="divide-y divide-white/5">
           {filtered.map((p: any, i: number) => (
             <motion.div 
@@ -242,16 +258,16 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      {/* Product Sheet (Modal) */}
+      {/* Product Sheet */}
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
-        <SheetContent className="w-full sm:max-w-2xl bg-[#0a0a0a] border-white/10 overflow-y-auto sm:rounded-l-2xl p-0">
-          <SheetHeader className="px-6 py-6 border-b border-white/5 sticky top-0 bg-[#0a0a0a]/95 backdrop-blur z-10">
+        <SheetContent className="w-full sm:max-w-2xl bg-[#0a0a0a] border-white/10 overflow-y-auto sm:rounded-l-2xl p-0 flex flex-col">
+          <SheetHeader className="px-6 py-6 border-b border-white/5 sticky top-0 bg-[#0a0a0a]/95 backdrop-blur z-10 flex-shrink-0">
             <SheetTitle className="font-serif text-2xl tracking-wide text-foreground">
               {form.id ? 'Edit Product' : 'New Product'}
             </SheetTitle>
           </SheetHeader>
           
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 pb-28">
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 overflow-y-auto">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-muted-foreground text-xs uppercase tracking-wider">Product Name *</Label>
               <Input id="name" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="bg-black/50 border-white/10 focus-visible:ring-primary focus-visible:border-primary transition-all" />
@@ -267,19 +283,47 @@ const AdminProducts = () => {
               <Textarea id="description" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="bg-black/50 border-white/10 min-h-[120px] resize-none focus-visible:ring-primary focus-visible:border-primary transition-all" />
             </div>
 
-            <div className="space-y-2 md:col-span-2 p-5 bg-white/[0.02] border border-white/5 rounded-xl">
-              <Label htmlFor="image_url" className="text-muted-foreground text-xs uppercase tracking-wider mb-2 block">Main Image URL</Label>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Input id="image_url" placeholder="https://example.com/image.jpg" value={form.image_url} onChange={(e) => setForm({...form, image_url: e.target.value})} className="bg-black/50 border-white/10 focus-visible:ring-primary focus-visible:border-primary transition-all" />
-                  <p className="text-[10px] text-muted-foreground mt-2">Provide a direct URL to the product image.</p>
+            {/* Multiple Images Section */}
+            <div className="space-y-4 md:col-span-2 p-5 bg-white/[0.02] border border-white/5 rounded-xl">
+              <Label className="text-muted-foreground text-xs uppercase tracking-wider block">Product Images</Label>
+              
+              {/* Image Grid */}
+              {form.image_urls.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {form.image_urls.map((url, index) => (
+                    <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-white/10 bg-black/50">
+                      <img src={url} alt={`Image ${index + 1}`} className="h-full w-full object-cover" />
+                      {index === 0 && (
+                        <span className="absolute top-1 left-1 bg-primary/90 text-primary-foreground text-[9px] font-medium px-1.5 py-0.5 rounded">
+                          Main
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeImageUrl(index)}
+                        className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive/90 text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                {form.image_url && (
-                  <div className="h-20 w-20 rounded-md overflow-hidden border border-white/10 flex-shrink-0 bg-black/50">
-                    <img src={form.image_url} alt="Preview" className="h-full w-full object-cover" />
-                  </div>
-                )}
+              )}
+
+              {/* Add Image Input */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://example.com/image.jpg"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImageUrl())}
+                  className="bg-black/50 border-white/10 focus-visible:ring-primary focus-visible:border-primary transition-all flex-1"
+                />
+                <Button type="button" variant="outline" onClick={addImageUrl} className="border-white/10 hover:bg-white/5 shrink-0">
+                  <Plus className="h-4 w-4 mr-1" /> Add
+                </Button>
               </div>
+              <p className="text-[10px] text-muted-foreground">First image is the main product image. Add multiple URLs for gallery.</p>
             </div>
 
             <div className="space-y-2">
@@ -355,7 +399,7 @@ const AdminProducts = () => {
             </div>
           </div>
           
-          <SheetFooter className="absolute bottom-0 left-0 right-0 px-6 py-4 bg-[#0a0a0a]/95 backdrop-blur border-t border-white/5 flex-row justify-end gap-3 z-10">
+          <SheetFooter className="sticky bottom-0 px-6 py-4 bg-[#0a0a0a]/95 backdrop-blur border-t border-white/5 flex-row justify-end gap-3 z-10 flex-shrink-0">
             <Button variant="outline" onClick={() => setEditOpen(false)} className="border-white/10 hover:bg-white/5 text-sm h-10 px-6">
               Cancel
             </Button>
