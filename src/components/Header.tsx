@@ -63,41 +63,11 @@ const Header = () => {
 
   return (
     <>
-      {/* Top announcement bar */}
-      <Box
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1201,
-          backgroundColor: '#C9A96E',
-          py: 0.6,
-          textAlign: 'center',
-          transition: 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
-          transform: scrolled ? 'translateY(-100%)' : 'translateY(0)',
-        }}
-      >
-        <Typography
-          variant="caption"
-          sx={{
-            color: '#0A0A0A',
-            fontFamily: '"Montserrat", sans-serif',
-            fontWeight: 500,
-            fontSize: '0.6rem',
-            letterSpacing: '0.25em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Complimentary Shipping on Orders Over $250
-        </Typography>
-      </Box>
-
       <AppBar
         position="fixed"
         elevation={0}
         sx={{
-          top: scrolled ? 0 : 28,
+          top: 0,
           transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
           backgroundColor: scrolled ? 'rgba(10, 10, 10, 0.97)' : 'rgba(10, 10, 10, 0.85)',
           backdropFilter: 'blur(30px)',
@@ -379,8 +349,6 @@ const Header = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Spacer to offset fixed navbar + announcement bar */}
-      <Box sx={{ height: { xs: 88, md: scrolled ? 70 : 112 }, transition: 'height 0.4s ease' }} />
 
       {/* Mobile Drawer */}
       <AnimatePresence>
