@@ -51,7 +51,7 @@ const ProductDetail = () => {
 
   const relatedProducts = allProducts.filter((p) => p.id !== product.id).slice(0, 3);
   const selectedColor = product.colors[0];
-  const mainImage = product.images[0] || '/placeholder.svg';
+  const mainImage = product.images[selectedImageIndex] || product.images[0] || '/placeholder.svg';
 
   const handleAddToCart = () => {
     if (!selectedSize) return;
