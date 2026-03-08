@@ -138,6 +138,11 @@ const Header = () => {
                       {user.email}
                     </Typography>
                   </MenuItem>
+                  {isAdmin && (
+                    <MenuItem onClick={() => { setAnchorEl(null); navigate('/admin'); }}>
+                      <Typography variant="body2">Admin Panel</Typography>
+                    </MenuItem>
+                  )}
                   <MenuItem onClick={handleSignOut}>
                     <LogoutIcon sx={{ fontSize: '1rem', mr: 1 }} /> Sign Out
                   </MenuItem>
