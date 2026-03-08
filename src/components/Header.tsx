@@ -67,7 +67,7 @@ const Header = () => {
         position="fixed"
         elevation={0}
         sx={{
-          top: scrolled ? 0 : 28,
+          top: 0,
           transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
           backgroundColor: scrolled ? 'rgba(10, 10, 10, 0.97)' : 'rgba(10, 10, 10, 0.85)',
           backdropFilter: 'blur(30px)',
