@@ -15,6 +15,21 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
+  const { user } = useAuth();
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const navigate = useNavigate();
+  const wishlisted = isWishlisted(product.id);
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    toggleWishlist.mutate(product.id);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
