@@ -110,24 +110,32 @@ const Home = () => {
       {/* ═══════════════ HERO ═══════════════ */}
       <Box
         ref={heroRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setMousePos({ x: 0, y: 0 })}
         sx={{
           position: 'relative',
-          height: { xs: '100vh', md: '100vh' },
+          minHeight: { xs: '100svh', md: '100vh' },
           display: 'flex',
           alignItems: 'center',
           overflow: 'hidden',
         }}
       >
-        {/* Multi-layer gradient overlay for cinematic depth */}
+        {/* Multi-layer gradient overlay — stronger on mobile for text readability */}
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
-            background: `
-              linear-gradient(180deg, rgba(10,10,10,0.15) 0%, rgba(10,10,10,0.35) 30%, rgba(10,10,10,0.7) 70%, rgba(10,10,10,0.95) 100%),
-              radial-gradient(ellipse at 20% 50%, rgba(201,169,110,0.06) 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 20%, rgba(201,169,110,0.03) 0%, transparent 50%)
-            `,
+            background: {
+              xs: `
+                linear-gradient(180deg, rgba(10,10,10,0.2) 0%, rgba(10,10,10,0.5) 35%, rgba(10,10,10,0.85) 65%, rgba(10,10,10,0.97) 100%),
+                radial-gradient(ellipse at 20% 50%, rgba(201,169,110,0.06) 0%, transparent 60%)
+              `,
+              md: `
+                linear-gradient(180deg, rgba(10,10,10,0.15) 0%, rgba(10,10,10,0.35) 30%, rgba(10,10,10,0.7) 70%, rgba(10,10,10,0.95) 100%),
+                radial-gradient(ellipse at 20% 50%, rgba(201,169,110,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(201,169,110,0.03) 0%, transparent 50%)
+              `,
+            },
             zIndex: 1,
           }}
         />
@@ -145,13 +153,54 @@ const Home = () => {
           }}
         />
 
-        {/* Parallax hero image */}
-        <motion.div style={{ position: 'absolute', inset: 0, y: heroImageY }}>
-          <Box
-            component="img"
+        {/* Floating gold particles */}
+        {particles.map((p, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: [0, 0.15, 0.08, 0.15, 0],
+              y: [0, -30, -15, -40, 0],
+              x: [0, 10, -8, 5, 0],
+            }}
+            transition={{
+              duration: p.duration,
+              delay: p.delay,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            style={{
+              position: 'absolute',
+              left: p.x,
+              top: p.y,
+              width: p.size,
+              height: p.size,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(201,169,110,0.6), rgba(201,169,110,0))',
+              zIndex: 2,
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+        {/* Parallax hero image with cinematic zoom & mouse tracking */}
+        <motion.div
+          style={{ position: 'absolute', inset: '-20px', y: heroImageY }}
+          animate={!isMobile ? { x: mousePos.x, y: mousePos.y } : {}}
+          transition={{ type: 'tween', duration: 0.6, ease: 'easeOut' }}
+        >
+          <motion.img
             src={heroImage}
             alt="Silvaine Premium Sneakers — Handcrafted Italian Luxury"
-            sx={{ width: '100%', height: '120%', objectFit: 'cover', objectPosition: { xs: 'center 40%', md: 'center center' } }}
+            initial={{ scale: 1.15, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 2.2, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              width: '100%',
+              height: '120%',
+              objectFit: 'cover',
+            }}
+            className="hero-image-position"
           />
         </motion.div>
 
