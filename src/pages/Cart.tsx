@@ -12,6 +12,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import CloseIcon from '@mui/icons-material/Close';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEO from '@/components/SEO';
 import { useAppSelector, useAppDispatch } from '@/redux/hooks';
 import { selectCartItems, selectCartTotal, removeFromCart, updateQuantity } from '@/redux/slices/cartSlice';
 
@@ -47,6 +48,7 @@ const Cart = () => {
 
   return (
     <Box sx={{ py: { xs: 6, md: 10 } }}>
+      <SEO title="Shopping Bag | Silvaine" description="Review your selections of premium Italian sneakers." url="/cart" noIndex />
       <Container maxWidth="lg">
         <Typography variant="h2" sx={{ mb: 8, fontSize: { xs: '1.8rem', md: '2.5rem' }, textAlign: 'center' }}>
           Shopping Bag

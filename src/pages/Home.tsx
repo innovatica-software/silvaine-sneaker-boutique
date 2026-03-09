@@ -8,6 +8,7 @@ import AutorenewOutlinedIcon from '@mui/icons-material/AutorenewOutlined';
 import DiamondOutlinedIcon from '@mui/icons-material/DiamondOutlined';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import ProductCard from '@/components/ProductCard';
+import SEO from '@/components/SEO';
 import SectionHeader from '@/components/SectionHeader';
 import { useProducts, type Product } from '@/hooks/useProducts';
 import heroImage from '@/assets/hero-jordan-1-low.jpg';
@@ -71,6 +72,23 @@ const Home = () => {
 
   return (
     <Box>
+      <SEO
+        title="Silvaine — Premium Italian Sneakers | Milano"
+        description="Discover luxury sneakers handcrafted from the finest Italian leather. Born in Milano, designed for those who appreciate timeless elegance. Shop the collection."
+        url="/"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'Silvaine',
+          url: 'https://silvaine-sneaker-boutique.lovable.app',
+          description: 'Premium Italian leather sneakers handcrafted in Milano',
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: 'https://silvaine-sneaker-boutique.lovable.app/shop?q={search_term_string}',
+            'query-input': 'required name=search_term_string',
+          },
+        }}
+      />
       {/* ═══════════════ HERO ═══════════════ */}
       <Box
         ref={heroRef}

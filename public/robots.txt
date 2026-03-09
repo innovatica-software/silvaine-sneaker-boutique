@@ -12,3 +12,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /order-success
+Disallow: /reset-password
+
+Sitemap: https://silvaine-sneaker-boutique.lovable.app/sitemap.xml

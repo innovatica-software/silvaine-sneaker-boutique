@@ -13,6 +13,7 @@ import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEO from '@/components/SEO';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -104,6 +105,7 @@ const Login = () => {
         overflow: 'hidden',
       }}
     >
+      <SEO title="Sign In | Silvaine" description="Sign in to your Silvaine account to manage orders and wishlist." url="/login" noIndex />
       {/* Ambient background effects */}
       <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <Box sx={{

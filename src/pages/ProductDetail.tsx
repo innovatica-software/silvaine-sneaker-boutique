@@ -36,6 +36,7 @@ import { toast } from 'sonner';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import SEO from '@/components/SEO';
 
 // ─── Skeleton Loading ─────────────────────────────────────────
 const ProductDetailSkeleton = () => (
@@ -246,6 +247,34 @@ const ProductDetail = () => {
 
   return (
     <Box sx={{ pb: { xs: 8, md: 14 } }}>
+      <SEO
+        title={`${product.name} | Silvaine`}
+        description={product.description || `${product.name} — Premium Italian leather sneaker by Silvaine. Handcrafted in Milano. €${product.discountPrice || product.price}.`}
+        url={`/product/${product.slug}`}
+        type="product"
+        image={product.images[0]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: product.name,
+          description: product.description,
+          image: product.images,
+          brand: { '@type': 'Brand', name: 'Silvaine' },
+          sku: product.sku || product.slug,
+          offers: {
+            '@type': 'Offer',
+            url: `https://silvaine-sneaker-boutique.lovable.app/product/${product.slug}`,
+            priceCurrency: 'EUR',
+            price: product.discountPrice || product.price,
+            availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          },
+          aggregateRating: product.reviewCount > 0 ? {
+            '@type': 'AggregateRating',
+            ratingValue: product.rating,
+            reviewCount: product.reviewCount,
+          } : undefined,
+        }}
+      />
       <Container maxWidth="lg">
         {/* ─── Breadcrumbs ─────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>

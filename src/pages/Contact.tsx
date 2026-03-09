@@ -4,6 +4,7 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import { motion } from 'framer-motion';
+import SEO from '@/components/SEO';
 
 const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -15,6 +16,20 @@ const Contact = () => {
 
   return (
     <Box sx={{ py: { xs: 10, md: 16 } }}>
+      <SEO
+        title="Contact Us | Silvaine"
+        description="Get in touch with Silvaine's Milano atelier. Visit us at Via Monte Napoleone, 8 or reach out via email and phone. We respond within 24 hours."
+        url="/contact"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'LocalBusiness',
+          name: 'Silvaine',
+          address: { '@type': 'PostalAddress', streetAddress: 'Via Monte Napoleone, 8', addressLocality: 'Milano', postalCode: '20121', addressCountry: 'IT' },
+          telephone: '+39 02 1234 5678',
+          email: 'info@silvaine.com',
+          url: 'https://silvaine-sneaker-boutique.lovable.app',
+        }}
+      />
       <Container maxWidth="lg">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 } }}>

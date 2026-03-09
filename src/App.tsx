@@ -2,6 +2,7 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import theme from './theme/theme';
 import { store } from './redux/store';
 import { AuthProvider } from './contexts/AuthContext';
@@ -34,6 +35,7 @@ import AdminSettings from './pages/admin/AdminSettings';
 const queryClient = new QueryClient();
 
 const App = () => (
+  <HelmetProvider>
   <Provider store={store}>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
@@ -76,6 +78,7 @@ const App = () => (
       </ThemeProvider>
     </QueryClientProvider>
   </Provider>
+  </HelmetProvider>
 );
 
 export default App;

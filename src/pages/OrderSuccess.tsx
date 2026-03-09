@@ -2,6 +2,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { Box, Container, Typography, Button, Divider } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { motion } from 'framer-motion';
+import SEO from '@/components/SEO';
 
 const OrderSuccess = () => {
   const location = useLocation();
@@ -9,6 +10,7 @@ const OrderSuccess = () => {
 
   return (
     <Box sx={{ py: { xs: 10, md: 16 }, minHeight: '70vh', display: 'flex', alignItems: 'center' }}>
+      <SEO title="Order Confirmed | Silvaine" description="Your order has been confirmed." url="/order-success" noIndex />
       <Container maxWidth="sm">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>

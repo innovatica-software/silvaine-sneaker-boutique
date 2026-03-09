@@ -14,6 +14,7 @@ import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckIcon from '@mui/icons-material/Check';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEO from '@/components/SEO';
 import { useAuth } from '@/contexts/AuthContext';
 
 const fieldBox = (focused: boolean) => ({
@@ -104,6 +105,7 @@ const Register = () => {
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       backgroundColor: '#0A0A0A', position: 'relative', overflow: 'hidden',
     }}>
+      <SEO title="Create Account | Silvaine" description="Join Silvaine to access exclusive collections, order tracking, and personalized recommendations." url="/register" noIndex />
       {/* Ambient effects */}
       <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <Box sx={{ position: 'absolute', top: '-15%', right: '-10%', width: '50%', height: '50%', background: 'radial-gradient(circle, rgba(201,169,110,0.03) 0%, transparent 70%)' }} />

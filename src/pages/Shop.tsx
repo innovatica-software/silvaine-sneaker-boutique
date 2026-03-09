@@ -26,6 +26,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
+import SEO from '@/components/SEO';
 import { useProducts, useCategories } from '@/hooks/useProducts';
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'popularity' | 'rating';
@@ -390,6 +391,25 @@ const Shop = () => {
 
   return (
     <Box sx={{ pb: { xs: 8, md: 14 }, minHeight: '100vh' }}>
+      <SEO
+        title="Shop All | Silvaine"
+        description="Browse our curated collection of premium Italian leather sneakers. Handcrafted in Milano with the finest materials. Free shipping on orders over €200."
+        url="/shop"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: 'Silvaine Sneaker Collection',
+          description: 'Premium Italian leather sneakers',
+          url: 'https://silvaine-sneaker-boutique.lovable.app/shop',
+          numberOfItems: products.length,
+          itemListElement: products.slice(0, 10).map((p, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            url: `https://silvaine-sneaker-boutique.lovable.app/product/${p.slug}`,
+            name: p.name,
+          })),
+        }}
+      />
       {/* ─── Hero Banner ─── */}
       <Box
         sx={{
