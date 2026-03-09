@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, Edit2, Trash2, Loader2, Image as ImageIcon, X } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Loader2, Image as ImageIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAdminProducts } from '@/hooks/useAdmin';
 import { useCategories } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +32,8 @@ const AdminProducts = () => {
   const { data: categories = [] } = useCategories();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -54,9 +56,30 @@ const AdminProducts = () => {
     is_trending: false,
   });
 
-  const filtered = products.filter((p: any) =>
+  const filtered = useMemo(() => products.filter((p: any) =>
     p.name.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase())
-  );
+  ), [products, search]);
+
+  // Reset page on search change
+  useEffect(() => { setCurrentPage(1); }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProducts = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('ellipsis');
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('ellipsis');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   const openNew = () => {
     setForm({ 
@@ -182,14 +205,26 @@ const AdminProducts = () => {
         </Button>
       </div>
 
-      <div className="relative w-full max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-muted/50 border-white/10"
-        />
+      <div className="flex items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or SKU..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 pr-9 bg-muted/50 border-white/10"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        {search && (
+          <Badge variant="secondary" className="text-xs font-mono shrink-0">
+            {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+          </Badge>
+        )}
       </div>
 
       <div className="rounded-md border border-white/5 bg-[#111] overflow-hidden shadow-sm">
@@ -204,7 +239,7 @@ const AdminProducts = () => {
         </div>
 
         <div className="divide-y divide-white/5">
-          {filtered.map((p: any, i: number) => (
+          {paginatedProducts.map((p: any, i: number) => (
             <motion.div 
               key={p.id} 
               initial={{ opacity: 0 }} 
@@ -257,6 +292,54 @@ const AdminProducts = () => {
           )}
         </div>
       </div>
+
+      {/* Pagination */}
+      {filtered.length > ITEMS_PER_PAGE && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+          <p className="text-xs text-muted-foreground font-mono">
+            Showing {startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, filtered.length)} of {filtered.length} products
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="h-8 px-2 border-white/10 hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {getPageNumbers().map((page, idx) =>
+              page === 'ellipsis' ? (
+                <span key={`e-${idx}`} className="px-2 text-muted-foreground text-xs">…</span>
+              ) : (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-8 w-8 p-0 text-xs font-mono ${
+                    currentPage === page
+                      ? 'bg-primary text-primary-foreground'
+                      : 'border-white/10 hover:bg-white/5'
+                  }`}
+                >
+                  {page}
+                </Button>
+              )
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="h-8 px-2 border-white/10 hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Product Sheet */}
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
