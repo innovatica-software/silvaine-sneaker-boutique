@@ -293,6 +293,54 @@ const AdminProducts = () => {
         </div>
       </div>
 
+      {/* Pagination */}
+      {filtered.length > ITEMS_PER_PAGE && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+          <p className="text-xs text-muted-foreground font-mono">
+            Showing {startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, filtered.length)} of {filtered.length} products
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="h-8 px-2 border-white/10 hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {getPageNumbers().map((page, idx) =>
+              page === 'ellipsis' ? (
+                <span key={`e-${idx}`} className="px-2 text-muted-foreground text-xs">…</span>
+              ) : (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-8 w-8 p-0 text-xs font-mono ${
+                    currentPage === page
+                      ? 'bg-primary text-primary-foreground'
+                      : 'border-white/10 hover:bg-white/5'
+                  }`}
+                >
+                  {page}
+                </Button>
+              )
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="h-8 px-2 border-white/10 hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Product Sheet */}
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
         <SheetContent className="w-full sm:max-w-2xl bg-[#0a0a0a] border-white/10 overflow-y-auto sm:rounded-l-2xl p-0 flex flex-col">
