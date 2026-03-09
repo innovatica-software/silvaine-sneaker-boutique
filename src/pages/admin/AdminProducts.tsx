@@ -239,7 +239,7 @@ const AdminProducts = () => {
         </div>
 
         <div className="divide-y divide-white/5">
-          {filtered.map((p: any, i: number) => (
+          {paginatedProducts.map((p: any, i: number) => (
             <motion.div 
               key={p.id} 
               initial={{ opacity: 0 }} 
