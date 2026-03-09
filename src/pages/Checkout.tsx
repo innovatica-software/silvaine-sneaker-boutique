@@ -10,6 +10,7 @@ import {
   Divider,
 } from '@mui/material';
 import { motion } from 'framer-motion';
+import SEO from '@/components/SEO';
 import { useAppSelector, useAppDispatch } from '@/redux/hooks';
 import { selectCartItems, selectCartTotal, clearCart } from '@/redux/slices/cartSlice';
 
