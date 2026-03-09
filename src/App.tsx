@@ -35,6 +35,7 @@ import AdminSettings from './pages/admin/AdminSettings';
 const queryClient = new QueryClient();
 
 const App = () => (
+  <HelmetProvider>
   <Provider store={store}>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
