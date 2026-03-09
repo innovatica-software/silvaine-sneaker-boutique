@@ -26,6 +26,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
+import SEO from '@/components/SEO';
 import { useProducts, useCategories } from '@/hooks/useProducts';
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'popularity' | 'rating';
