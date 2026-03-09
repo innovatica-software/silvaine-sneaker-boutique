@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, Edit2, Trash2, Loader2, Image as ImageIcon, X } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Loader2, Image as ImageIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAdminProducts } from '@/hooks/useAdmin';
 import { useCategories } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
