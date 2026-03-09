@@ -56,9 +56,30 @@ const AdminProducts = () => {
     is_trending: false,
   });
 
-  const filtered = products.filter((p: any) =>
+  const filtered = useMemo(() => products.filter((p: any) =>
     p.name.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase())
-  );
+  ), [products, search]);
+
+  // Reset page on search change
+  useEffect(() => { setCurrentPage(1); }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProducts = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('ellipsis');
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('ellipsis');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   const openNew = () => {
     setForm({ 
