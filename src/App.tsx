@@ -78,6 +78,7 @@ const App = () => (
       </ThemeProvider>
     </QueryClientProvider>
   </Provider>
+  </HelmetProvider>
 );
 
 export default App;
