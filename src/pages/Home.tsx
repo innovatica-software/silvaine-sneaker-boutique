@@ -47,12 +47,29 @@ const Home = () => {
   const allProducts = products;
 
   const heroRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   });
   const heroImageY = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (isMobile) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    setMousePos({ x: x * -12, y: y * -8 });
+  }, [isMobile]);
+
+  // Gold floating particles config
+  const particles = [
+    { size: 6, x: '15%', y: '25%', duration: 8, delay: 0 },
+    { size: 4, x: '75%', y: '35%', duration: 10, delay: 2 },
+    { size: 5, x: '60%', y: '70%', duration: 9, delay: 4 },
+  ];
 
   const trustBadges = [
     { icon: <LocalShippingOutlinedIcon />, label: 'Free Shipping', desc: 'On orders over €200' },
