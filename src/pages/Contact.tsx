@@ -4,6 +4,7 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import { motion } from 'framer-motion';
+import SEO from '@/components/SEO';
 
 const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
