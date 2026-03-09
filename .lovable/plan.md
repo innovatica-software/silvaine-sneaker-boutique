@@ -1,62 +1,56 @@
 
 
-## Plan: Comprehensive SEO Enhancement
+## Comprehensive SEO Implementation Plan
 
-### Current State
-- Only static meta tags in `index.html` (same title/description for all pages)
-- No per-page dynamic titles or meta descriptions
-- No `react-helmet-async` or equivalent for SPA meta management
-- Basic `robots.txt` — no sitemap reference
-- One JSON-LD schema (Organization) — no Product, BreadcrumbList, or other structured data
-- No canonical URLs, no `sitemap.xml`
+### Overview
+Add dynamic per-page SEO meta tags, Open Graph/Twitter cards, JSON-LD structured data, sitemap.xml, and updated robots.txt using `react-helmet-async`.
 
-### Changes
+### 1. Install dependency
+- Add `react-helmet-async` package
 
-**1. Install `react-helmet-async` and create an SEO component**
-- New file: `src/components/SEO.tsx` — reusable component accepting `title`, `description`, `image`, `url`, `type`, and optional `jsonLd` props
-- Sets `<title>`, `meta description`, Open Graph tags, Twitter Card tags, and canonical URL dynamically per page
+### 2. Create `src/components/SEO.tsx`
+Reusable component accepting `title`, `description`, `image`, `url`, `type`, `noIndex`, and `jsonLd` props. Renders `<Helmet>` with:
+- `<title>`, `<meta name="description">`, `<link rel="canonical">`
+- Open Graph tags (og:title, og:description, og:image, og:url, og:type, og:site_name)
+- Twitter Card tags (twitter:card, twitter:title, twitter:description, twitter:image)
+- JSON-LD `<script>` blocks from the `jsonLd` prop
 
-**2. Add SEO wrapper to `App.tsx`**
-- Wrap app with `<HelmetProvider>`
+### 3. Modify `src/App.tsx`
+- Import `HelmetProvider` from `react-helmet-async`
+- Wrap entire app with `<HelmetProvider>`
 
-**3. Add `<SEO>` to every public page with unique content:**
+### 4. Add `<SEO>` to each public page
 
-| Page | Title | Description |
-|------|-------|-------------|
-| Home | `Silvaine — Premium Italian Sneakers \| Milano` | Luxury sneakers handcrafted in Milano... |
-| Shop | `Shop All \| Silvaine` | Browse our collection of premium Italian leather sneakers... |
-| ProductDetail | `{Product Name} \| Silvaine` (dynamic) | `{product.description}` (dynamic) |
-| About | `About Silvaine \| Our Story` | Founded by Asif Hossain, crafted in Milano... |
-| Contact | `Contact Us \| Silvaine` | Get in touch with our Milano atelier... |
-| Cart | `Shopping Bag \| Silvaine` | Review your selections... |
-| Login/Register | `Sign In \| Silvaine` / `Create Account \| Silvaine` | ... |
+| Page | Title | JSON-LD Schema |
+|------|-------|----------------|
+| **Home** | `Silvaine — Premium Italian Sneakers \| Milano` | `WebSite` with search action |
+| **Shop** | `Shop All \| Silvaine` | `ItemList` with product entries |
+| **ProductDetail** | `{product.name} \| Silvaine` (dynamic) | `Product` schema (name, image, price, SKU, availability, brand, rating) |
+| **About** | `About Silvaine \| Our Story` | `Organization` (founder, address, founding date) |
+| **Contact** | `Contact Us \| Silvaine` | `LocalBusiness` (address, phone, email) |
+| **Cart** | `Shopping Bag \| Silvaine` | None, `noIndex: true` |
+| **Login** | `Sign In \| Silvaine` | None, `noIndex: true` |
+| **Register** | `Create Account \| Silvaine` | None, `noIndex: true` |
+| **ResetPassword** | `Reset Password \| Silvaine` | None, `noIndex: true` |
+| **OrderSuccess** | `Order Confirmed \| Silvaine` | None, `noIndex: true` |
+| **Checkout** | `Checkout \| Silvaine` | None, `noIndex: true` |
 
-**4. Add JSON-LD structured data per page:**
-- **Home**: `WebSite` schema with search action
-- **ProductDetail**: `Product` schema (name, image, price, availability, brand, SKU, reviews/rating)
-- **Shop**: `ItemList` schema listing products
-- **About**: Enhanced `Organization` schema (logo, sameAs social links, foundingDate)
-- **Contact**: `ContactPage` + `LocalBusiness` with address, phone, email
+### 5. Create `public/sitemap.xml`
+Static XML sitemap listing: `/`, `/shop`, `/about`, `/contact`, `/login`, `/register`
 
-**5. Create `public/sitemap.xml`**
-- Static sitemap listing all public routes (`/`, `/shop`, `/about`, `/contact`, `/login`, `/register`)
-- Note: product pages are dynamic, so we include a `/shop` entry and optionally a few key product slugs
-
-**6. Update `public/robots.txt`**
+### 6. Update `public/robots.txt`
+- Add `Disallow: /admin`
+- Add `Disallow: /checkout`
 - Add `Sitemap: https://silvaine-sneaker-boutique.lovable.app/sitemap.xml`
-- Add `Disallow: /admin` to block admin pages from indexing
 
-**7. Enhance `index.html`**
+### 7. Enhance `index.html`
 - Add `<meta name="robots" content="index, follow">`
 - Add `<meta name="author" content="Silvaine">`
-- Add `<link rel="canonical" href="https://silvaine-sneaker-boutique.lovable.app/">`
 - Keep existing OG/Twitter tags as fallbacks
 
-### Files
+### Files changed
 - **New**: `src/components/SEO.tsx`
 - **New**: `public/sitemap.xml`
-- **Modified**: `src/App.tsx` (HelmetProvider wrap)
-- **Modified**: `src/pages/Home.tsx`, `Shop.tsx`, `ProductDetail.tsx`, `About.tsx`, `Contact.tsx`, `Cart.tsx`, `Login.tsx`, `Register.tsx` (add `<SEO>`)
-- **Modified**: `public/robots.txt` (sitemap + disallow admin)
-- **Modified**: `index.html` (additional meta)
+- **Modified**: `src/App.tsx`, `index.html`, `public/robots.txt`
+- **Modified**: `Home.tsx`, `Shop.tsx`, `ProductDetail.tsx`, `About.tsx`, `Contact.tsx`, `Cart.tsx`, `Login.tsx`, `Register.tsx`, `ResetPassword.tsx`, `OrderSuccess.tsx`, `Checkout.tsx` (add `<SEO>` at top of each return)
 
