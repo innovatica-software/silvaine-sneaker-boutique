@@ -1,6 +1,7 @@
 import { Box, Container, Typography, Grid, Button } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import SEO from '@/components/SEO';
 import aboutHero from '@/assets/about-hero.jpg';
 
 const About = () => {
