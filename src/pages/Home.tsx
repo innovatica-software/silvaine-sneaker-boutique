@@ -12,7 +12,8 @@ import SEO from '@/components/SEO';
 import SectionHeader from '@/components/SectionHeader';
 import { useProducts, type Product } from '@/hooks/useProducts';
 import heroImage from '@/assets/hero-jordan-1-low.jpg';
-import { useRef } from 'react';
+import { useRef, useState, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const customerReviews = [
   {
@@ -46,12 +47,29 @@ const Home = () => {
   const allProducts = products;
 
   const heroRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   });
   const heroImageY = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (isMobile) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    setMousePos({ x: x * -12, y: y * -8 });
+  }, [isMobile]);
+
+  // Gold floating particles config
+  const particles = [
+    { size: 6, x: '15%', y: '25%', duration: 8, delay: 0 },
+    { size: 4, x: '75%', y: '35%', duration: 10, delay: 2 },
+    { size: 5, x: '60%', y: '70%', duration: 9, delay: 4 },
+  ];
 
   const trustBadges = [
     { icon: <LocalShippingOutlinedIcon />, label: 'Free Shipping', desc: 'On orders over €200' },
@@ -92,24 +110,32 @@ const Home = () => {
       {/* ═══════════════ HERO ═══════════════ */}
       <Box
         ref={heroRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setMousePos({ x: 0, y: 0 })}
         sx={{
           position: 'relative',
-          height: { xs: '100vh', md: '100vh' },
+          minHeight: { xs: '100svh', md: '100vh' },
           display: 'flex',
           alignItems: 'center',
           overflow: 'hidden',
         }}
       >
-        {/* Multi-layer gradient overlay for cinematic depth */}
+        {/* Multi-layer gradient overlay — stronger on mobile for text readability */}
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
-            background: `
-              linear-gradient(180deg, rgba(10,10,10,0.15) 0%, rgba(10,10,10,0.35) 30%, rgba(10,10,10,0.7) 70%, rgba(10,10,10,0.95) 100%),
-              radial-gradient(ellipse at 20% 50%, rgba(201,169,110,0.06) 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 20%, rgba(201,169,110,0.03) 0%, transparent 50%)
-            `,
+            background: {
+              xs: `
+                linear-gradient(180deg, rgba(10,10,10,0.2) 0%, rgba(10,10,10,0.5) 35%, rgba(10,10,10,0.85) 65%, rgba(10,10,10,0.97) 100%),
+                radial-gradient(ellipse at 20% 50%, rgba(201,169,110,0.06) 0%, transparent 60%)
+              `,
+              md: `
+                linear-gradient(180deg, rgba(10,10,10,0.15) 0%, rgba(10,10,10,0.35) 30%, rgba(10,10,10,0.7) 70%, rgba(10,10,10,0.95) 100%),
+                radial-gradient(ellipse at 20% 50%, rgba(201,169,110,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(201,169,110,0.03) 0%, transparent 50%)
+              `,
+            },
             zIndex: 1,
           }}
         />
@@ -127,13 +153,54 @@ const Home = () => {
           }}
         />
 
-        {/* Parallax hero image */}
-        <motion.div style={{ position: 'absolute', inset: 0, y: heroImageY }}>
-          <Box
-            component="img"
+        {/* Floating gold particles */}
+        {particles.map((p, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: [0, 0.15, 0.08, 0.15, 0],
+              y: [0, -30, -15, -40, 0],
+              x: [0, 10, -8, 5, 0],
+            }}
+            transition={{
+              duration: p.duration,
+              delay: p.delay,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            style={{
+              position: 'absolute',
+              left: p.x,
+              top: p.y,
+              width: p.size,
+              height: p.size,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(201,169,110,0.6), rgba(201,169,110,0))',
+              zIndex: 2,
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+        {/* Parallax hero image with cinematic zoom & mouse tracking */}
+        <motion.div
+          style={{ position: 'absolute', inset: '-20px', y: heroImageY }}
+          animate={!isMobile ? { x: mousePos.x, y: mousePos.y } : {}}
+          transition={{ type: 'tween', duration: 0.6, ease: 'easeOut' }}
+        >
+          <motion.img
             src={heroImage}
             alt="Silvaine Premium Sneakers — Handcrafted Italian Luxury"
-            sx={{ width: '100%', height: '120%', objectFit: 'cover', objectPosition: { xs: 'center 40%', md: 'center center' } }}
+            initial={{ scale: 1.15, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 2.2, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              width: '100%',
+              height: '120%',
+              objectFit: 'cover',
+            }}
+            className="hero-image-position"
           />
         </motion.div>
 
@@ -190,14 +257,20 @@ const Home = () => {
                 <Typography
                   variant="h1"
                   component="span"
+                  className="hero-shimmer-text"
                   sx={{
                     fontSize: { xs: '3.5rem', sm: '4.5rem', md: '6rem', lg: '8rem' },
                     lineHeight: { xs: 1.1, md: 1 },
                     fontWeight: 200,
                     letterSpacing: { xs: '0.08em', md: '0.12em' },
-                    color: 'primary.main',
                     display: 'block',
-                    textShadow: '0 0 80px rgba(201,169,110,0.15)',
+                    background: 'linear-gradient(90deg, #C9A96E 0%, #E8D5A8 35%, #FFF8E7 50%, #E8D5A8 65%, #C9A96E 100%)',
+                    backgroundSize: '200% 100%',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    textShadow: 'none',
+                    filter: 'drop-shadow(0 0 60px rgba(201,169,110,0.15))',
                   }}
                 >
                   Elegance
@@ -340,7 +413,7 @@ const Home = () => {
           </Box>
         </motion.div>
 
-        {/* Scroll indicator */}
+        {/* Scroll indicator — visible on all screens */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -351,7 +424,7 @@ const Home = () => {
             Scroll
           </Typography>
           <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
-            <Box sx={{ width: 1, height: 30, backgroundColor: 'rgba(201,169,110,0.3)', display: { xs: 'none', md: 'block' } }} />
+            <Box sx={{ width: 1, height: { xs: 20, md: 30 }, backgroundColor: 'rgba(201,169,110,0.3)' }} />
           </motion.div>
         </motion.div>
       </Box>
