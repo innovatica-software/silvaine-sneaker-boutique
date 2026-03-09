@@ -12,6 +12,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import CloseIcon from '@mui/icons-material/Close';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEO from '@/components/SEO';
 import { useAppSelector, useAppDispatch } from '@/redux/hooks';
 import { selectCartItems, selectCartTotal, removeFromCart, updateQuantity } from '@/redux/slices/cartSlice';
 
