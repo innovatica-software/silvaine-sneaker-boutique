@@ -8,6 +8,7 @@ import AutorenewOutlinedIcon from '@mui/icons-material/AutorenewOutlined';
 import DiamondOutlinedIcon from '@mui/icons-material/DiamondOutlined';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import ProductCard from '@/components/ProductCard';
+import SEO from '@/components/SEO';
 import SectionHeader from '@/components/SectionHeader';
 import { useProducts, type Product } from '@/hooks/useProducts';
 import heroImage from '@/assets/hero-jordan-1-low.jpg';
