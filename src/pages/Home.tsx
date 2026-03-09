@@ -257,14 +257,20 @@ const Home = () => {
                 <Typography
                   variant="h1"
                   component="span"
+                  className="hero-shimmer-text"
                   sx={{
                     fontSize: { xs: '3.5rem', sm: '4.5rem', md: '6rem', lg: '8rem' },
                     lineHeight: { xs: 1.1, md: 1 },
                     fontWeight: 200,
                     letterSpacing: { xs: '0.08em', md: '0.12em' },
-                    color: 'primary.main',
                     display: 'block',
-                    textShadow: '0 0 80px rgba(201,169,110,0.15)',
+                    background: 'linear-gradient(90deg, #C9A96E 0%, #E8D5A8 35%, #FFF8E7 50%, #E8D5A8 65%, #C9A96E 100%)',
+                    backgroundSize: '200% 100%',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    textShadow: 'none',
+                    filter: 'drop-shadow(0 0 60px rgba(201,169,110,0.15))',
                   }}
                 >
                   Elegance
