@@ -105,6 +105,7 @@ const Login = () => {
         overflow: 'hidden',
       }}
     >
+      <SEO title="Sign In | Silvaine" description="Sign in to your Silvaine account to manage orders and wishlist." url="/login" noIndex />
       {/* Ambient background effects */}
       <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <Box sx={{

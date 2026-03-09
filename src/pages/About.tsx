@@ -7,6 +7,21 @@ import aboutHero from '@/assets/about-hero.jpg';
 const About = () => {
   return (
     <Box>
+      <SEO
+        title="About Silvaine | Our Story"
+        description="Founded by Asif Hossain, Silvaine crafts premium sneakers in Milano using the finest Italian leather. Discover our heritage, philosophy, and commitment to timeless elegance."
+        url="/about"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'Silvaine',
+          description: 'Premium Italian sneakers handcrafted in Milano',
+          founder: { '@type': 'Person', name: 'Asif Hossain' },
+          foundingDate: '2024',
+          address: { '@type': 'PostalAddress', streetAddress: 'Via Monte Napoleone, 8', addressLocality: 'Milano', postalCode: '20121', addressCountry: 'IT' },
+          url: 'https://silvaine-sneaker-boutique.lovable.app',
+        }}
+      />
       {/* Hero */}
       <Box
         sx={{

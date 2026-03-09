@@ -52,6 +52,7 @@ const Checkout = () => {
 
   return (
     <Box sx={{ py: { xs: 6, md: 10 } }}>
+      <SEO title="Checkout | Silvaine" description="Complete your order." url="/checkout" noIndex />
       <Container maxWidth="lg">
         <Typography variant="h2" sx={{ mb: 8, fontSize: { xs: '1.8rem', md: '2.5rem' }, textAlign: 'center' }}>
           Checkout

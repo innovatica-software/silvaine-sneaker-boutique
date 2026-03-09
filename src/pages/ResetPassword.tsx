@@ -55,6 +55,7 @@ const ResetPassword = () => {
 
   return (
     <Box sx={{ py: { xs: 10, md: 16 }, minHeight: '80vh', display: 'flex', alignItems: 'center' }}>
+      <SEO title="Reset Password | Silvaine" description="Set your new password." url="/reset-password" noIndex />
       <Container maxWidth="xs">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>
