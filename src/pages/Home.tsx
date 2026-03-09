@@ -12,7 +12,8 @@ import SEO from '@/components/SEO';
 import SectionHeader from '@/components/SectionHeader';
 import { useProducts, type Product } from '@/hooks/useProducts';
 import heroImage from '@/assets/hero-jordan-1-low.jpg';
-import { useRef } from 'react';
+import { useRef, useState, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const customerReviews = [
   {
