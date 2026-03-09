@@ -36,6 +36,7 @@ import { toast } from 'sonner';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import SEO from '@/components/SEO';
 
 // ─── Skeleton Loading ─────────────────────────────────────────
 const ProductDetailSkeleton = () => (
