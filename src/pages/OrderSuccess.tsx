@@ -2,6 +2,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { Box, Container, Typography, Button, Divider } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { motion } from 'framer-motion';
+import SEO from '@/components/SEO';
 
 const OrderSuccess = () => {
   const location = useLocation();
