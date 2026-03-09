@@ -32,6 +32,8 @@ const AdminProducts = () => {
   const { data: categories = [] } = useCategories();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [newImageUrl, setNewImageUrl] = useState('');
