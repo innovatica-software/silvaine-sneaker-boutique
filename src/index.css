@@ -57,3 +57,25 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: #C9A96E;
 }
+
+/* Hero shimmer text animation */
+.hero-shimmer-text {
+  animation: shimmer-sweep 3s ease-in-out 1.5s forwards;
+  background-position: 100% 0;
+}
+
+@keyframes shimmer-sweep {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Hero image responsive positioning */
+.hero-image-position {
+  object-position: center 30%;
+}
+
+@media (min-width: 768px) {
+  .hero-image-position {
+    object-position: center center;
+  }
+}

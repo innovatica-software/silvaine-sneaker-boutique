@@ -413,7 +413,7 @@ const Home = () => {
           </Box>
         </motion.div>
 
-        {/* Scroll indicator */}
+        {/* Scroll indicator — visible on all screens */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -424,7 +424,7 @@ const Home = () => {
             Scroll
           </Typography>
           <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
-            <Box sx={{ width: 1, height: 30, backgroundColor: 'rgba(201,169,110,0.3)', display: { xs: 'none', md: 'block' } }} />
+            <Box sx={{ width: 1, height: { xs: 20, md: 30 }, backgroundColor: 'rgba(201,169,110,0.3)' }} />
           </motion.div>
         </motion.div>
       </Box>
