@@ -15,17 +15,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SEO from '@/components/SEO';
 import { useAppSelector, useAppDispatch } from '@/redux/hooks';
 import { selectCartItems, selectCartTotal, removeFromCart, updateQuantity } from '@/redux/slices/cartSlice';
-
-const SHIPPING_COST = 15;
-const FREE_SHIPPING_THRESHOLD = 500;
+import { SETTINGS_FALLBACK, previewShipping, useSettings } from '@/hooks/useProducts';
 
 const Cart = () => {
   const items = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartTotal);
   const dispatch = useAppDispatch();
 
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+  // The €15 / free-over-€500 rule used to be a pair of constants duplicated
+  // here and in Checkout. It now comes from the server, which is also the thing
+  // that charges it — so the two cannot drift apart.
+  const { data: settings = SETTINGS_FALLBACK } = useSettings();
+  const shipping = previewShipping(subtotal, settings);
   const total = subtotal + shipping;
+  const currency = settings.currencySymbol;
 
   if (items.length === 0) {
     return (
@@ -133,7 +136,7 @@ const Cart = () => {
                           </IconButton>
                         </Box>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          €{((item.discountPrice || item.price) * item.quantity).toFixed(2)}
+                          {currency}{((item.discountPrice || item.price) * item.quantity).toFixed(2)}
                         </Typography>
                       </Box>
                     </Box>
@@ -160,23 +163,23 @@ const Cart = () => {
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
               <Typography variant="body2" color="text.secondary">Subtotal</Typography>
-              <Typography variant="body2">€{subtotal.toFixed(2)}</Typography>
+              <Typography variant="body2">{currency}{subtotal.toFixed(2)}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
               <Typography variant="body2" color="text.secondary">Shipping</Typography>
               <Typography variant="body2" sx={{ color: shipping === 0 ? 'success.main' : 'text.primary' }}>
-                {shipping === 0 ? 'FREE' : `€${shipping.toFixed(2)}`}
+                {shipping === 0 ? 'FREE' : `${currency}${shipping.toFixed(2)}`}
               </Typography>
             </Box>
             {shipping > 0 && (
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                Free shipping on orders over €{FREE_SHIPPING_THRESHOLD}
+                Free shipping on orders over {currency}{settings.freeShippingThreshold}
               </Typography>
             )}
             <Divider sx={{ my: 3 }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
               <Typography variant="h6">Total</Typography>
-              <Typography variant="h6">€{total.toFixed(2)}</Typography>
+              <Typography variant="h6">{currency}{total.toFixed(2)}</Typography>
             </Box>
             <Button
               component={Link}

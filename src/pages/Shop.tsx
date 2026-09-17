@@ -27,11 +27,27 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
 import SEO from '@/components/SEO';
-import { useProducts, useCategories } from '@/hooks/useProducts';
+import { errorMessage } from '@/api';
+import {
+  useCategories,
+  useInfiniteProducts,
+  useProducts,
+} from '@/hooks/useProducts';
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'popularity' | 'rating';
 
 const ITEMS_PER_PAGE = 12;
+
+/**
+ * Upper bound of the price slider. The old page filtered a fully-downloaded
+ * catalogue, so this was only a UI range; it is now sent to the server as
+ * `maxPrice`, and the default is treated as "no ceiling" so the filter is not
+ * silently applied to every request.
+ */
+const MAX_PRICE = 700;
+
+/** Debounce for the price slider, which fires continuously while dragging. */
+const PRICE_DEBOUNCE_MS = 350;
 
 const ProductSkeleton = () => (
   <Box>
@@ -56,20 +72,67 @@ const ProductSkeleton = () => (
 const Shop = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [priceRange, setPriceRange] = useState<number[]>([0, 700]);
+  const [priceRange, setPriceRange] = useState<number[]>([0, MAX_PRICE]);
+  const [debouncedPrice, setDebouncedPrice] = useState<number[]>([0, MAX_PRICE]);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [gridCols, setGridCols] = useState<3 | 4>(3);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  const { data: products = [], isLoading } = useProducts();
   const { data: dbCategories = [] } = useCategories();
 
-  const categories = ['All', ...dbCategories.map((c: any) => c.name)];
+  const categories = ['All', ...dbCategories.map((c) => c.name)];
+
+  /** Category chips are labelled by name; the API filters by slug. */
+  const categorySlug = useMemo(
+    () =>
+      selectedCategory === 'All'
+        ? undefined
+        : dbCategories.find((c) => c.name === selectedCategory)?.slug,
+    [dbCategories, selectedCategory],
+  );
+
+  // The slider emits on every pixel of a drag. Without this, each one would be
+  // a request.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedPrice(priceRange), PRICE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [priceRange]);
+
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProducts(
+    {
+      category: categorySlug,
+      sort: sortBy,
+      minPrice: debouncedPrice[0] > 0 ? debouncedPrice[0] : undefined,
+      maxPrice: debouncedPrice[1] < MAX_PRICE ? debouncedPrice[1] : undefined,
+    },
+    ITEMS_PER_PAGE,
+  );
+
+  /** Every page fetched so far, flattened for the grid. */
+  const visibleProducts = useMemo(
+    () => data?.pages.flatMap((page) => page.data) ?? [],
+    [data],
+  );
+
+  /** How many match the current filter, straight from the server. */
+  const matchingCount = data?.pages[0]?.meta.total ?? 0;
+
+  // One extra one-row request gives the unfiltered catalogue size for the hero
+  // counter and the "All" chip, which a filtered page cannot report.
+  const { data: catalogueSummary } = useProducts({ limit: 1 });
+  const catalogueTotal = catalogueSummary?.meta.total ?? 0;
 
   // Back to top visibility
   useEffect(() => {
@@ -78,51 +141,17 @@ const Shop = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Reset visible count when filters change
-  useEffect(() => {
-    setVisibleCount(ITEMS_PER_PAGE);
-  }, [selectedCategory, sortBy, priceRange]);
+  const hasMore = Boolean(hasNextPage);
+  const loadingMore = isFetchingNextPage;
 
-  const filteredProducts = useMemo(() => {
-    let result = [...products];
-
-    if (selectedCategory !== 'All') {
-      result = result.filter((p) => p.category === selectedCategory);
-    }
-
-    result = result.filter((p) => {
-      const price = p.discountPrice || p.price;
-      return price >= priceRange[0] && price <= priceRange[1];
-    });
-
-    switch (sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
-        break;
-      case 'price-desc':
-        result.sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price));
-        break;
-      case 'popularity':
-        result.sort((a, b) => b.reviewCount - a.reviewCount);
-        break;
-      case 'rating':
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      default:
-        result.sort((a, b) => (a.isNew ? -1 : 1));
-    }
-
-    return result;
-  }, [products, selectedCategory, sortBy, priceRange]);
-
-  const visibleProducts = filteredProducts.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredProducts.length;
-
-  const hasActiveFilters = selectedCategory !== 'All' || priceRange[0] !== 0 || priceRange[1] !== 700;
+  const hasActiveFilters =
+    selectedCategory !== 'All' ||
+    priceRange[0] !== 0 ||
+    priceRange[1] !== MAX_PRICE;
 
   const clearFilters = () => {
     setSelectedCategory('All');
-    setPriceRange([0, 700]);
+    setPriceRange([0, MAX_PRICE]);
     setSortBy('newest');
   };
 
@@ -130,15 +159,11 @@ const Shop = () => {
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const [target] = entries;
-      if (target.isIntersecting && hasMore && !loadingMore) {
-        setLoadingMore(true);
-        setTimeout(() => {
-          setVisibleCount((prev) => Math.min(prev + ITEMS_PER_PAGE, filteredProducts.length));
-          setLoadingMore(false);
-        }, 600);
+      if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        void fetchNextPage();
       }
     },
-    [hasMore, loadingMore, filteredProducts.length]
+    [fetchNextPage, hasNextPage, isFetchingNextPage],
   );
 
   useEffect(() => {
@@ -223,8 +248,8 @@ const Shop = () => {
               }}
             >
               {cat === 'All'
-                ? products.length
-                : products.filter((p) => p.category === cat).length}
+                ? catalogueTotal
+                : (dbCategories.find((c) => c.name === cat)?.productCount ?? 0)}
             </Typography>
           </Box>
         ))}
@@ -253,7 +278,7 @@ const Shop = () => {
           onChange={(_, newValue) => setPriceRange(newValue as number[])}
           valueLabelDisplay="auto"
           min={0}
-          max={700}
+          max={MAX_PRICE}
           valueLabelFormat={(v) => `€${v}`}
           sx={{
             color: '#C9A96E',
@@ -401,8 +426,8 @@ const Shop = () => {
           name: 'Silvaine Sneaker Collection',
           description: 'Premium Italian leather sneakers',
           url: 'https://silvaine-sneaker-boutique.lovable.app/shop',
-          numberOfItems: products.length,
-          itemListElement: products.slice(0, 10).map((p, i) => ({
+          numberOfItems: catalogueTotal,
+          itemListElement: visibleProducts.slice(0, 10).map((p, i) => ({
             '@type': 'ListItem',
             position: i + 1,
             url: `https://silvaine-sneaker-boutique.lovable.app/product/${p.slug}`,
@@ -518,7 +543,7 @@ const Shop = () => {
               <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4, mt: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography sx={{ fontFamily: '"Cormorant Garamond", serif', fontSize: '1.4rem', color: '#C9A96E', fontWeight: 300 }}>
-                    {products.length}
+                    {catalogueTotal}
                   </Typography>
                   <Typography sx={{ fontFamily: '"Montserrat", sans-serif', fontSize: '0.45rem', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
                     Styles
@@ -568,7 +593,7 @@ const Shop = () => {
                     transition: 'all 0.3s',
                   }}
                 >
-                  Filters{hasActiveFilters ? ` (${selectedCategory !== 'All' ? 1 : 0 + (priceRange[0] !== 0 || priceRange[1] !== 700 ? 1 : 0)})` : ''}
+                  Filters{hasActiveFilters ? ` (${selectedCategory !== 'All' ? 1 : 0 + (priceRange[0] !== 0 || priceRange[1] !== MAX_PRICE ? 1 : 0)})` : ''}
                 </Button>
               ) : (
                 <Button
@@ -600,7 +625,7 @@ const Shop = () => {
                   display: { xs: 'none', sm: 'block' },
                 }}
               >
-                Showing {visibleProducts.length} of {filteredProducts.length} products
+                Showing {visibleProducts.length} of {matchingCount} products
               </Typography>
             </Box>
 
@@ -701,10 +726,10 @@ const Shop = () => {
                     }}
                   />
                 )}
-                {(priceRange[0] !== 0 || priceRange[1] !== 700) && (
+                {(priceRange[0] !== 0 || priceRange[1] !== MAX_PRICE) && (
                   <Chip
                     label={`€${priceRange[0]} – €${priceRange[1]}`}
-                    onDelete={() => setPriceRange([0, 700])}
+                    onDelete={() => setPriceRange([0, MAX_PRICE])}
                     size="small"
                     sx={{
                       backgroundColor: 'rgba(201,169,110,0.08)',
@@ -769,7 +794,34 @@ const Shop = () => {
 
           {/* Products */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            {isLoading ? (
+            {isError ? (
+              /* A failed catalogue request used to render as an empty grid,
+                 which reads as "we sold out" rather than "try again". */
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <Box sx={{ textAlign: 'center', py: 16 }}>
+                  <Typography sx={{ fontFamily: '"Cormorant Garamond", serif', fontSize: '1.5rem', color: 'rgba(255,255,255,0.35)', fontWeight: 300, mb: 1.5 }}>
+                    We could not load the collection
+                  </Typography>
+                  <Typography sx={{ fontFamily: '"Montserrat", sans-serif', fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', mb: 4, letterSpacing: '0.05em' }}>
+                    {errorMessage(error, 'Please check your connection and try again.')}
+                  </Typography>
+                  <Button
+                    onClick={() => void refetch()}
+                    sx={{
+                      fontSize: '0.58rem',
+                      letterSpacing: '0.2em',
+                      color: '#C9A96E',
+                      border: '1px solid rgba(201,169,110,0.25)',
+                      px: 4,
+                      py: 1.2,
+                      '&:hover': { backgroundColor: 'rgba(201,169,110,0.05)', borderColor: '#C9A96E' },
+                    }}
+                  >
+                    Try Again
+                  </Button>
+                </Box>
+              </motion.div>
+            ) : isLoading ? (
               <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
                 {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
                   <Grid size={{ xs: 6, sm: 6, md: gridCols === 4 ? 3 : 4 }} key={i}>
@@ -798,7 +850,7 @@ const Shop = () => {
                 {/* Loading more */}
                 {loadingMore && (
                   <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mt: 0.5 }}>
-                    {Array.from({ length: Math.min(ITEMS_PER_PAGE, filteredProducts.length - visibleCount) }).map((_, i) => (
+                    {Array.from({ length: Math.min(ITEMS_PER_PAGE, matchingCount - visibleProducts.length) }).map((_, i) => (
                       <Grid size={{ xs: 6, sm: 6, md: gridCols === 4 ? 3 : 4 }} key={`skeleton-${i}`}>
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                           <ProductSkeleton />
@@ -829,7 +881,7 @@ const Shop = () => {
                           You've seen it all
                         </Typography>
                         <Typography sx={{ fontFamily: '"Montserrat", sans-serif', fontSize: '0.45rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.12)', textTransform: 'uppercase' }}>
-                          {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} in collection
+                          {matchingCount} {matchingCount === 1 ? 'product' : 'products'} in collection
                         </Typography>
                       </Box>
                       <Box sx={{ width: 80, height: 1, background: 'linear-gradient(90deg, rgba(201,169,110,0.1), transparent)' }} />
@@ -840,7 +892,7 @@ const Shop = () => {
             )}
 
             {/* Empty state */}
-            {!isLoading && filteredProducts.length === 0 && (
+            {!isLoading && !isError && visibleProducts.length === 0 && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                 <Box sx={{ textAlign: 'center', py: 16 }}>
                   <Box sx={{ width: 60, height: 60, border: '1px solid rgba(201,169,110,0.15)', borderRadius: '50%', mx: 'auto', mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

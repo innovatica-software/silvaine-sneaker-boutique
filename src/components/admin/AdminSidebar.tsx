@@ -21,6 +21,7 @@ import {
   Tags,
   Users,
   Star,
+  Mail,
   BarChart3,
   Settings,
   Store,
@@ -38,6 +39,7 @@ const navItems = [
   { label: 'Categories', path: '/admin/categories', icon: Tags },
   { label: 'Customers', path: '/admin/customers', icon: Users },
   { label: 'Reviews', path: '/admin/reviews', icon: Star },
+  { label: 'Enquiries', path: '/admin/enquiries', icon: Mail },
   { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
   { label: 'Settings', path: '/admin/settings', icon: Settings },
 ];

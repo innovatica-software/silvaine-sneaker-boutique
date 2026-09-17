@@ -22,12 +22,15 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import { useAppSelector } from '@/redux/hooks';
 import { selectCartCount } from '@/redux/slices/cartSlice';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWishlist } from '@/hooks/useWishlist';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navLinks = [
@@ -48,6 +51,7 @@ const Header = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user, signOut } = useAuth();
   const { data: isAdmin } = useAdminCheck();
+  const { wishlistItems } = useWishlist();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -274,6 +278,18 @@ const Header = () => {
                     </Typography>
                   </Box>
                   <Divider sx={{ borderColor: 'rgba(201, 169, 110, 0.08)', my: 0.5 }} />
+                  <MenuItem onClick={() => { setAnchorEl(null); navigate('/account'); }}>
+                    <AccountCircleOutlinedIcon sx={{ fontSize: '0.95rem', mr: 1.5 }} />
+                    My Account
+                  </MenuItem>
+                  <MenuItem onClick={() => { setAnchorEl(null); navigate('/orders'); }}>
+                    <ReceiptLongOutlinedIcon sx={{ fontSize: '0.95rem', mr: 1.5 }} />
+                    My Orders
+                  </MenuItem>
+                  <MenuItem onClick={() => { setAnchorEl(null); navigate('/wishlist'); }}>
+                    <FavoriteBorderIcon sx={{ fontSize: '0.95rem', mr: 1.5 }} />
+                    Wishlist
+                  </MenuItem>
                   {isAdmin && (
                     <MenuItem onClick={() => { setAnchorEl(null); navigate('/admin'); }}>
                       <DashboardOutlinedIcon sx={{ fontSize: '0.95rem', mr: 1.5, color: '#C9A96E' }} />
@@ -302,8 +318,13 @@ const Header = () => {
               </IconButton>
             )}
 
+            {/* The heart used to be a button that did nothing. The wishlist
+                lives on the account page, and a guest is sent to sign in. */}
             {!isMobile && (
               <IconButton
+                component={Link}
+                to={user ? '/wishlist' : '/login'}
+                aria-label="Wishlist"
                 sx={{
                   color: 'rgba(245, 245, 245, 0.65)',
                   '&:hover': {
@@ -312,7 +333,21 @@ const Header = () => {
                   },
                 }}
               >
-                <FavoriteBorderIcon sx={{ fontSize: '1.2rem' }} />
+                <Badge
+                  badgeContent={wishlistItems.length}
+                  invisible={wishlistItems.length === 0}
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      backgroundColor: '#C9A96E',
+                      color: '#0A0A0A',
+                      fontSize: '0.55rem',
+                      minWidth: 16,
+                      height: 16,
+                    },
+                  }}
+                >
+                  <FavoriteBorderIcon sx={{ fontSize: '1.2rem' }} />
+                </Badge>
               </IconButton>
             )}
 
@@ -528,6 +563,44 @@ const Header = () => {
                     >
                       {user.email}
                     </Typography>
+
+                    {/* The account pages are only reachable from here on
+                        mobile, so they belong in the drawer too. */}
+                    {[
+                      { label: 'My Account', to: '/account', icon: <AccountCircleOutlinedIcon sx={{ fontSize: '0.9rem' }} /> },
+                      { label: 'My Orders', to: '/orders', icon: <ReceiptLongOutlinedIcon sx={{ fontSize: '0.9rem' }} /> },
+                      { label: 'Wishlist', to: '/wishlist', icon: <FavoriteBorderIcon sx={{ fontSize: '0.9rem' }} /> },
+                    ].map((entry) => (
+                      <Box
+                        key={entry.to}
+                        component={Link}
+                        to={entry.to}
+                        onClick={() => setMobileOpen(false)}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          mb: 1.8,
+                          textDecoration: 'none',
+                          color: 'rgba(245, 245, 245, 0.6)',
+                          transition: 'color 0.3s ease',
+                          '&:hover': { color: '#C9A96E' },
+                        }}
+                      >
+                        {entry.icon}
+                        <Typography
+                          sx={{
+                            fontFamily: '"Montserrat", sans-serif',
+                            fontSize: '0.7rem',
+                            letterSpacing: '0.15em',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {entry.label}
+                        </Typography>
+                      </Box>
+                    ))}
+
                     <Box
                       onClick={() => { setMobileOpen(false); handleSignOut(); }}
                       sx={{

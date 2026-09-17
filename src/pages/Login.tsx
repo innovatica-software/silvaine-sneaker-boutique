@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -15,7 +15,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { motion, AnimatePresence } from 'framer-motion';
 import SEO from '@/components/SEO';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { errorMessage } from '@/api';
 
 const fieldBox = (focused: boolean) => ({
   position: 'relative' as const,
@@ -67,30 +67,46 @@ const Login = () => {
   const [resetSent, setResetSent] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signIn, resetPassword } = useAuth();
+  const location = useLocation();
+  const { signIn, requestPasswordReset } = useAuth();
+
+  /** Where ProtectedRoute/AdminRoute wanted to send them before the detour. */
+  const redirectTo = (location.state as { from?: { pathname?: string } } | null)
+    ?.from?.pathname;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const { error } = await signIn(email, password);
-    if (error) { setLoading(false); setError(error.message); return; }
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (currentUser) {
-      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: currentUser.id, _role: 'admin' });
+
+    try {
+      // The session response already carries the roles, so the old pattern of
+      // signing in and then asking `has_role` in two more round-trips is gone.
+      const user = await signIn(email, password);
+      navigate(redirectTo ?? (user.roles.includes('admin') ? '/admin' : '/'), {
+        replace: true,
+      });
+    } catch (err) {
+      setError(errorMessage(err, 'Could not sign you in.'));
       setLoading(false);
-      navigate(isAdmin ? '/admin' : '/');
-    } else { setLoading(false); navigate('/'); }
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const { error } = await resetPassword(email);
-    setLoading(false);
-    if (error) setError(error.message);
-    else setResetSent(true);
+
+    try {
+      // Succeeds whether or not the address exists — the response must not
+      // reveal which addresses have accounts.
+      await requestPasswordReset(email);
+      setResetSent(true);
+    } catch (err) {
+      setError(errorMessage(err, 'Could not send the reset link.'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -16,6 +16,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import { motion, AnimatePresence } from 'framer-motion';
 import SEO from '@/components/SEO';
 import { useAuth } from '@/contexts/AuthContext';
+import { errorMessage } from '@/api';
 
 const fieldBox = (focused: boolean) => ({
   position: 'relative' as const,
@@ -87,10 +88,17 @@ const Register = () => {
     if (password.length < 8) { setError('Password must be at least 8 characters'); return; }
     setError('');
     setLoading(true);
-    const { error } = await signUp(email, password, name);
-    setLoading(false);
-    if (error) setError(error.message);
-    else navigate('/');
+
+    try {
+      // Registration signs the customer straight in — the API returns a full
+      // session, and the user, profile and customer role are created in one
+      // transaction, replacing the two database triggers that used to do it.
+      await signUp(email, password, name);
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError(errorMessage(err, 'Could not create your account.'));
+      setLoading(false);
+    }
   };
 
   const reqs = [

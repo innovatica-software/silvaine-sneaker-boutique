@@ -15,7 +15,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const navigate = useNavigate();
   const wishlisted = isWishlisted(product.id);
@@ -23,10 +23,14 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) {
-      navigate('/login');
+
+    // The wishlist is per-account, so a guest is sent to sign in first — and
+    // back to this product afterwards.
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: { pathname: `/product/${product.slug}` } } });
       return;
     }
+
     toggleWishlist.mutate(product.id);
   };
 

@@ -37,6 +37,8 @@ import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import SEO from '@/components/SEO';
+import ProductReviews from '@/components/ProductReviews';
+import { ApiError, errorMessage } from '@/api';
 
 // ─── Skeleton Loading ─────────────────────────────────────────
 const ProductDetailSkeleton = () => (
@@ -143,12 +145,21 @@ const ProductDetailSkeleton = () => (
 // ─── Main Component ───────────────────────────────────────────
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { data: product, isLoading } = useProduct(slug || '');
-  const { data: allProducts = [], isLoading: relatedLoading } = useProducts();
+  const { data: product, isLoading, isError, error } = useProduct(slug || '');
   const dispatch = useAppDispatch();
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { isWishlisted, toggleWishlist } = useWishlist();
+
+  /**
+   * Related products are chosen by the server now — same category, five taken
+   * so the current product can be dropped and four still remain. The old
+   * version filtered the entire catalogue in the browser, which only worked
+   * because the entire catalogue was already in memory.
+   */
+  const { data: relatedPage, isLoading: relatedLoading } = useProducts(
+    product ? { category: product.categoryId ?? undefined, limit: 5 } : {},
+  );
 
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
@@ -160,8 +171,8 @@ const ProductDetail = () => {
   const wishlisted = product ? isWishlisted(product.id) : false;
 
   const handleWishlistToggle = () => {
-    if (!user) {
-      navigate('/login');
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: { pathname: `/product/${slug}` } } });
       return;
     }
     if (product) toggleWishlist.mutate(product.id);
@@ -179,13 +190,24 @@ const ProductDetail = () => {
 
   if (isLoading) return <ProductDetailSkeleton />;
 
+  /**
+   * "Not found" and "the request failed" are now different states. They used to
+   * be the same one, because the fetcher returned null on any error — so a
+   * dropped connection told the customer the product no longer exists.
+   */
   if (!product) {
+    const notFound = !isError || (error instanceof ApiError && error.isNotFound);
+
     return (
       <Container maxWidth="lg" sx={{ py: 20, textAlign: 'center' }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Typography variant="h4" sx={{ mb: 1 }}>Product Not Found</Typography>
+          <Typography variant="h4" sx={{ mb: 1 }}>
+            {notFound ? 'Product Not Found' : 'We could not load this product'}
+          </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-            The item you're looking for may have been moved or is no longer available.
+            {notFound
+              ? "The item you're looking for may have been moved or is no longer available."
+              : errorMessage(error, 'Please check your connection and try again.')}
           </Typography>
           <Button component={Link} to="/shop" variant="outlined" sx={{ px: 5 }}>
             Browse Collection
@@ -195,12 +217,9 @@ const ProductDetail = () => {
     );
   }
 
-  const relatedProducts = allProducts
-    .filter((p) => p.id !== product.id && p.category === product.category)
+  const relatedProducts = (relatedPage?.data ?? [])
+    .filter((p) => p.id !== product.id)
     .slice(0, 4);
-  const fallbackRelated = relatedProducts.length > 0
-    ? relatedProducts
-    : allProducts.filter((p) => p.id !== product.id).slice(0, 4);
 
   const selectedColor = product.colors[selectedColorIndex] || product.colors[0];
   const mainImage = product.images[selectedImageIndex] || product.images[0] || '/placeholder.svg';
@@ -1030,6 +1049,14 @@ const ProductDetail = () => {
           </Grid>
         </Grid>
 
+        {/* ─── Reviews ─────────────────────────────── */}
+        <ProductReviews
+          productId={product.id}
+          productSlug={product.slug}
+          rating={product.rating}
+          reviewCount={product.reviewCount}
+        />
+
         {/* ─── Related Products ────────────────────── */}
         <Box sx={{ mt: { xs: 12, md: 18 } }}>
           <motion.div
@@ -1087,7 +1114,7 @@ const ProductDetail = () => {
             </Grid>
           ) : (
             <Grid container spacing={3}>
-              {fallbackRelated.map((p, i) => (
+              {relatedProducts.map((p, i) => (
                 <Grid size={{ xs: 6, sm: 6, md: 3 }} key={p.id}>
                   <ProductCard product={p} index={i} />
                 </Grid>

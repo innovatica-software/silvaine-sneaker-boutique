@@ -1,82 +1,193 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  authApi,
+  SESSION_EXPIRED_EVENT,
+  tokenStorage,
+  type AuthSession,
+  type AuthUser,
+} from '@/api';
 
-interface AuthContextType {
-  session: Session | null;
-  user: User | null;
+interface AuthContextValue {
+  user: AuthUser | null;
+  /** True only while the session is being restored on first load. */
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  isAuthenticated: boolean;
+  /** Read from the JWT claims in the session response — no extra round-trip. */
+  isAdmin: boolean;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string,
+  ) => Promise<AuthUser>;
+  signIn: (email: string, password: string) => Promise<AuthUser>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: Error | null }>;
-  updatePassword: (password: string) => Promise<{ error: Error | null }>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  resetPassword: (token: string, password: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+/**
+ * Holds the signed-in identity for the whole app.
+ *
+ * Under Supabase this wrapped `onAuthStateChange` and `getSession()`, and the
+ * question "is this person an admin?" cost a separate `has_role` RPC that was
+ * cached for ten minutes — long enough that a revoked admin kept their menu.
+ * Roles now travel inside the access token and are re-read from `/auth/me` on
+ * every page load, so the window is one token lifetime instead.
+ *
+ * Client-side role state is convenience only. It decides what to *render*;
+ * every `/admin/*` route is enforced again by `RolesGuard` on the server, and
+ * the API is the boundary that matters.
+ */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
+  /** Per-user caches must not survive a change of user. */
+  const resetCaches = useCallback(() => {
+    queryClient.removeQueries({ queryKey: ['wishlist'] });
+    queryClient.removeQueries({ queryKey: ['orders'] });
+    queryClient.removeQueries({ queryKey: ['profile'] });
+    queryClient.removeQueries({ queryKey: ['admin'] });
+  }, [queryClient]);
+
+  const adopt = useCallback(
+    (session: AuthSession): AuthUser => {
+      tokenStorage.write({
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+      });
+      resetCaches();
+      setUser(session.user);
+      return session.user;
+    },
+    [resetCaches],
+  );
+
+  // Session restoration. A stored token is not proof of a live session — it may
+  // be expired or revoked — so it is exchanged for the real user before the app
+  // treats anyone as signed in.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    let cancelled = false;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const restore = async () => {
+      if (!tokenStorage.read()) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
 
-    return () => subscription.unsubscribe();
+      try {
+        const current = await authApi.me();
+        if (!cancelled) setUser(current);
+      } catch {
+        // apiRequest already tried to refresh; reaching here means the session
+        // is genuinely gone.
+        tokenStorage.clear();
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void restore();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error: error as Error | null };
-  };
+  // Raised by the API client when a refresh fails mid-session.
+  useEffect(() => {
+    const onExpired = () => {
+      setUser(null);
+      resetCaches();
+    };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
-  };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, [resetCaches]);
 
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error: error as Error | null };
-  };
-
-  const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password });
-    return { error: error as Error | null };
-  };
-
-  return (
-    <AuthContext.Provider value={{ session, user, loading, signUp, signIn, signOut, resetPassword, updatePassword }}>
-      {children}
-    </AuthContext.Provider>
+  const signUp = useCallback(
+    async (email: string, password: string, fullName: string) =>
+      adopt(await authApi.register({ email, password, fullName })),
+    [adopt],
   );
+
+  const signIn = useCallback(
+    async (email: string, password: string) =>
+      adopt(await authApi.login({ email, password })),
+    [adopt],
+  );
+
+  const signOut = useCallback(async () => {
+    await authApi.logout();
+    setUser(null);
+    resetCaches();
+  }, [resetCaches]);
+
+  const requestPasswordReset = useCallback(
+    (email: string) => authApi.forgotPassword(email),
+    [],
+  );
+
+  const resetPassword = useCallback(
+    (token: string, password: string) =>
+      authApi.resetPassword({ token, password }),
+    [],
+  );
+
+  const refreshUser = useCallback(async () => {
+    if (!tokenStorage.read()) return;
+
+    try {
+      setUser(await authApi.me());
+    } catch {
+      /* the client has already handled an invalid session */
+    }
+  }, []);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      loading,
+      isAuthenticated: user !== null,
+      isAdmin: user?.roles.includes('admin') ?? false,
+      signUp,
+      signIn,
+      signOut,
+      requestPasswordReset,
+      resetPassword,
+      refreshUser,
+    }),
+    [
+      user,
+      loading,
+      signUp,
+      signIn,
+      signOut,
+      requestPasswordReset,
+      resetPassword,
+      refreshUser,
+    ],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextValue => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;

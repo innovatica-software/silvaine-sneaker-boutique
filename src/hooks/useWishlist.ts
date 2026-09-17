@@ -1,56 +1,68 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { errorMessage, wishlistApi } from '@/api';
+import { useAuth } from '@/contexts/AuthContext';
 
+const TOAST_STYLE = {
+  background: '#141414',
+  border: '1px solid rgba(201,169,110,0.2)',
+  color: '#F5F5F5',
+};
+
+/**
+ * Saved products for the signed-in customer.
+ *
+ * The toggle is a single server call now. Previously the browser read its own
+ * cached array, decided whether this was an add or a remove, and issued the
+ * matching write — so two quick clicks could both see "not saved" and both try
+ * to insert, hitting the unique constraint.
+ */
 export const useWishlist = () => {
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: wishlistItems = [] } = useQuery({
-    queryKey: ['wishlist', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('wishlists')
-        .select('product_id')
-        .eq('user_id', user.id);
-      if (error) throw error;
-      return data.map((item) => item.product_id);
-    },
-    enabled: !!user,
+  const { data: wishlistItems = [], isLoading } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: () => wishlistApi.productIds(),
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60,
   });
 
   const toggleWishlist = useMutation({
-    mutationFn: async (productId: string) => {
-      if (!user) throw new Error('Must be logged in');
-      const isWishlisted = wishlistItems.includes(productId);
-      if (isWishlisted) {
-        const { error } = await supabase
-          .from('wishlists')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('product_id', productId);
-        if (error) throw error;
-        return { added: false };
-      } else {
-        const { error } = await supabase
-          .from('wishlists')
-          .insert({ user_id: user.id, product_id: productId });
-        if (error) throw error;
-        return { added: true };
-      }
-    },
+    mutationFn: (productId: string) => wishlistApi.toggle(productId),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
-      toast.success(result.added ? 'Added to wishlist' : 'Removed from wishlist');
+      // The server's answer is authoritative, so the cache is patched from it
+      // rather than from what the button assumed.
+      queryClient.setQueryData<string[]>(['wishlist'], (current = []) =>
+        result.inWishlist
+          ? [...new Set([...current, result.productId])]
+          : current.filter((id) => id !== result.productId),
+      );
+
+      toast.success(
+        result.inWishlist ? 'Added to wishlist' : 'Removed from wishlist',
+        { style: TOAST_STYLE },
+      );
     },
-    onError: () => {
-      toast.error('Failed to update wishlist');
+    onError: (error) => {
+      toast.error(errorMessage(error, 'Could not update your wishlist.'), {
+        style: TOAST_STYLE,
+      });
     },
   });
 
   const isWishlisted = (productId: string) => wishlistItems.includes(productId);
 
-  return { wishlistItems, toggleWishlist, isWishlisted };
+  return { wishlistItems, isLoading, toggleWishlist, isWishlisted };
+};
+
+/** The full saved-product records, for a wishlist page. */
+export const useWishlistItems = () => {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: ['wishlist', 'items'],
+    queryFn: () => wishlistApi.items(),
+    enabled: isAuthenticated,
+  });
 };
