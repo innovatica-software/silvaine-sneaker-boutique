@@ -1,3 +1,5 @@
+import { Loader2 } from 'lucide-react';
+import { Suspense } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import {
@@ -85,7 +87,17 @@ const AdminLayout = () => {
           </header>
 
           <main className="flex-1 overflow-auto p-4 md:p-8">
-            <Outlet />
+            {/* Each admin page is its own lazy chunk; this keeps the sidebar
+                and breadcrumb on screen while the next one arrives. */}
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                </div>
+              }
+            >
+              <Outlet />
+            </Suspense>
           </main>
         </div>
       </div>

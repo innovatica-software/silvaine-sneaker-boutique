@@ -40,11 +40,20 @@ const customerReviews = [
 ];
 
 const Home = () => {
-  const { data: products = [], isLoading } = useProducts();
-  const featured = products.filter((p) => p.isBestSeller);
-  const newArrivals = products.filter((p) => p.isNew);
-  const trending = products.filter((p) => p.isTrending);
-  const allProducts = products;
+  /**
+   * Four narrow queries instead of one that downloaded the whole catalogue and
+   * filtered it three times in the browser. Each section asks the server for
+   * exactly the rows it renders, and they run in parallel.
+   */
+  const { data: latest, isLoading } = useProducts({ limit: 10 });
+  const { data: bestSellers } = useProducts({ isBestSeller: true, limit: 6 });
+  const { data: newest } = useProducts({ isNew: true, limit: 6 });
+  const { data: trendingPage } = useProducts({ isTrending: true, limit: 6 });
+
+  const allProducts = latest?.data ?? [];
+  const featured = bestSellers?.data ?? [];
+  const newArrivals = newest?.data ?? [];
+  const trending = trendingPage?.data ?? [];
 
   const heroRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -480,7 +489,7 @@ const Home = () => {
             <Grid size={{ xs: 12, md: 6 }}>
               <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }}>
                 <Box sx={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
-                  <Box component="img" src={products[0]?.images[0] || '/placeholder.svg'} alt="Silvaine Craftsmanship" sx={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.8) contrast(1.1)' }} />
+                  <Box component="img" src={allProducts[0]?.images[0] || '/placeholder.svg'} alt="Silvaine Craftsmanship" sx={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.8) contrast(1.1)' }} />
                   <Box sx={{ position: 'absolute', inset: 0, border: '1px solid rgba(201, 169, 110, 0.15)' }} />
                 </Box>
               </motion.div>

@@ -21,10 +21,15 @@ import type {
   Role,
 } from './types';
 
-interface PageQuery {
+/**
+ * A type alias rather than an interface on purpose: TypeScript gives object
+ * type aliases an implicit index signature, so they can be passed straight to
+ * the query serialiser. An interface cannot.
+ */
+type PageQuery = {
   page?: number;
   limit?: number;
-}
+};
 
 function withResolvedItemImages(order: Order): Order {
   if (!order.items) return order;

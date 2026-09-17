@@ -1,14 +1,14 @@
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { Box, CircularProgress, ThemeProvider, CssBaseline } from '@mui/material';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { Suspense, lazy } from 'react';
 import { ApiError } from '@/api';
 import theme from './theme/theme';
 import { store } from './redux/store';
 import { AuthProvider } from './contexts/AuthContext';
 import MainLayout from './layouts/MainLayout';
-import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import Home from './pages/Home';
@@ -28,16 +28,38 @@ import VerifyEmail from './pages/VerifyEmail';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminOrders from './pages/admin/AdminOrders';
-import AdminInventory from './pages/admin/AdminInventory';
-import AdminCategories from './pages/admin/AdminCategories';
-import AdminCustomers from './pages/admin/AdminCustomers';
-import AdminReviews from './pages/admin/AdminReviews';
-import AdminEnquiries from './pages/admin/AdminEnquiries';
-import AdminAnalytics from './pages/admin/AdminAnalytics';
-import AdminSettings from './pages/admin/AdminSettings';
+/**
+ * The back office is lazy-loaded. It carries its own design system, the charts
+ * library and every management screen — a good part of the bundle that a
+ * customer browsing sneakers will never open. Splitting it keeps the storefront
+ * entry small, and an admin pays the extra request once.
+ */
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
+const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
+const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
+const AdminCustomers = lazy(() => import('./pages/admin/AdminCustomers'));
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'));
+const AdminEnquiries = lazy(() => import('./pages/admin/AdminEnquiries'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+
+/** Matches the AdminRoute spinner, so the two chain without a visual jump. */
+const AdminFallback = () => (
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      backgroundColor: '#0A0A0A',
+    }}
+  >
+    <CircularProgress sx={{ color: '#C9A96E' }} />
+  </Box>
+);
 
 /**
  * Retrying a 401, 403, 404 or 422 is pointless — the answer will not change —
@@ -143,7 +165,9 @@ const App = () => (
                   path="/admin"
                   element={
                     <AdminRoute>
-                      <AdminLayout />
+                      <Suspense fallback={<AdminFallback />}>
+                        <AdminLayout />
+                      </Suspense>
                     </AdminRoute>
                   }
                 >

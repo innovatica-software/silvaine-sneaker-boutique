@@ -177,8 +177,14 @@ function defaultMessageFor(status: number): string {
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   body?: unknown;
-  /** Serialised into a query string; null/undefined/'' entries are dropped. */
-  query?: Record<string, string | number | boolean | undefined | null>;
+  /**
+   * Serialised into a query string; null/undefined/'' entries are dropped.
+   *
+   * Typed as a readonly index rather than `Record<…>` so a plain interface
+   * (`{ page?: number }`) can be passed without TypeScript demanding an index
+   * signature on it.
+   */
+  query?: { readonly [key: string]: string | number | boolean | undefined | null };
   /** Skips the Authorization header and the refresh dance entirely. */
   anonymous?: boolean;
   signal?: AbortSignal;

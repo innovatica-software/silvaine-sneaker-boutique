@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Environment. The old .env was committed with the Supabase keys in it; the
+# anon key was designed to be public so that was survivable, but the habit is
+# not — nothing here should ever carry a real value again.
+.env
+.env.local
+.env.*.local
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

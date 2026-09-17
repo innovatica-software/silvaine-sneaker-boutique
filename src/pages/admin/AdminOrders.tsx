@@ -86,16 +86,20 @@ const AdminOrders = () => {
   const { data: settings = SETTINGS_FALLBACK } = useSettings();
   const currency = settings.currencySymbol;
 
-  const orders = data?.data ?? [];
   const meta = data?.meta;
 
   /**
    * Search stays client-side over the current page. The API has no order-search
    * parameter, and inventing a filter that only sees 20 rows at a time would be
    * worse than one that is honestly scoped to what is on screen.
+   *
+   * `data?.data` is read inside the callback rather than defaulted above it: a
+   * fresh `[]` on every render would be a new reference and defeat the memo.
    */
   const visible = useMemo(() => {
+    const orders = data?.data ?? [];
     const term = search.trim().toLowerCase();
+
     if (!term) return orders;
 
     return orders.filter(
@@ -103,7 +107,7 @@ const AdminOrders = () => {
         (order.shippingName ?? '').toLowerCase().includes(term) ||
         order.id.toLowerCase().includes(term),
     );
-  }, [orders, search]);
+  }, [data, search]);
 
   const handleStatusChange = async (id: string, status: OrderStatus) => {
     try {
